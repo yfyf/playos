@@ -1,3 +1,4 @@
+{ isTestBuild ? false }:
 rec {
     fullProductName = "Dividat PlayOS";
     safeProductName = "playos";
@@ -27,7 +28,8 @@ rec {
         ./application/playos-status.nix
         ./application/power-management/default.nix
         ./application/limit-vtes.nix
-      ];
+      ] ++ (lib.lists.optional isTestBuild
+            ./testing/end-to-end/profile.nix);
 
       # Kiosk runs as a non-privileged user
       users.users.play = {

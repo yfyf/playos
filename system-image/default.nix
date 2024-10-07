@@ -15,10 +15,7 @@ let nixos = pkgs.importFromNixos ""; in
 
       # Application-specific module
       application.module
-    ]
-    # TODO: move this to a 'test' overlay in the application?
-    ++ lib.lists.optional isTestBuild
-        (import ../testing/end-to-end/profile.nix { inherit pkgs; });
+    ];
 
     # Storage
     fileSystems = {

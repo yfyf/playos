@@ -26,7 +26,7 @@ in
 
 let
 
-  application = import applicationPath;
+  application = import applicationPath { isTestBuild = buildTest; };
 
   pkgs = import ./pkgs (with application; {
     applicationOverlays = application.overlays;
@@ -60,7 +60,6 @@ let
     # System image as used in full installation
     systemImage = callPackage ./system-image {
         application = application;
-        isTestBuild = buildTest;
     };
 
     # USB live system
