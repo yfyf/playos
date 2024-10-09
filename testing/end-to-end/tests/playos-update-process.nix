@@ -54,9 +54,12 @@ pkgs.testers.runNixOSTest {
     playos = { config, lib, pkgs, ... }:
     {
       imports = [
-        (import ../virtualisation-config.nix { inherit overlayPath; })
+        ../virtualisation-config.nix
       ];
-      virtualisation.vlans = [ 1 ];
+      config = {
+        playos.e2e-tests.overlayPath = overlayPath;
+        virtualisation.vlans = [ 1 ];
+      };
     };
     # more accurate name would be update_and_proxy_server...
     update_server = { config, nodes, lib, pkgs, ... }:
