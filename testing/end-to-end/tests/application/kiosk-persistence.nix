@@ -16,9 +16,11 @@ pkgs.testers.runNixOSTest {
     playos = { config, lib, pkgs, ... }:
     {
       imports = [
-        (import ../../virtualisation-config.nix { inherit overlayPath; })
+        ../../virtualisation-config.nix
       ];
       config = {
+        playos.disk = disk;
+
         virtualisation.forwardPorts = [
             # CDP access inside of PlayOS VM from test driver
             {   from = "host";
@@ -139,7 +141,6 @@ def get_booted_slot():
 aio = asyncio.Runner()
 run_stub_server(${toString hostKioskURLport})
 
-create_overlay("${disk}", "${overlayPath}")
 playos.start(allow_reboot=True)
 
 with TestPrecondition("PlayOS is booted, controller is running"):

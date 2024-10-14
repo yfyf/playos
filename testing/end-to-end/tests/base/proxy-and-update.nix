@@ -56,8 +56,9 @@ pkgs.testers.runNixOSTest {
     playos = { config, lib, pkgs, ... }:
     {
       imports = [
-        (import ../../virtualisation-config.nix { inherit overlayPath; })
+        ../../virtualisation-config.nix
       ];
+      playos.disk = disk;
       virtualisation.vlans = [ 1 ];
     };
     # runs an HTTP proxy and a mock HTTP update/bundle server
@@ -126,7 +127,6 @@ pkgs.testers.runNixOSTest {
 
     proxy_url = "http://${nodes.sidekick.networking.primaryIPAddress}:8888"
 
-    create_overlay("${disk}", "${overlayPath}")
     playos.start(allow_reboot=True)
     sidekick.start()
 

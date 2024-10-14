@@ -1,16 +1,5 @@
-import subprocess
 import unittest
 from colorama import Fore, Style
-
-# HACK: create writable cow disk overlay (same as in ./run-in-vm --disk)
-def create_overlay(disk, overlay_path):
-    subprocess.run(["rm", "-f", overlay_path])
-    subprocess.run([
-        'qemu-img', 'create',
-            '-b', disk, '-F', 'raw',
-            '-f', 'qcow2', overlay_path
-        ],
-        check=True)
 
 class AbstractTestCheck(object):
     def __init__(self, check_kind, test_descr):
