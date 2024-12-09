@@ -1,0 +1,42 @@
+name: Release Tag
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id:  ${{ secrets.TEST_DISKS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.TEST_DISKS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
+
+      - uses: ./.github/actions/prep-build-env
+
+      - name: Validate tag
+        run: |
+          app_vsn="$(nix eval -f application.nix 'version')"
+          if [ "$app_vsn" != "$GITHUB_REF_NAME" ]; then
+            echo "Git tag ($GITHUB_REF_NAME) does not match version in application.nix ($app_vsn), aborting!"
+            exit 1
+          fi
+
+      - name: Build release disk
+        run: ./build release-disk
+
+      - name: Publish to S3
+        run: |
+          disk_path="$(readlink ./release/play-disk-*.img)"
+          md5sum $disk_path > /tmp/dummy
+          disk_path=/tmp/dummy
+          target_url="s3://dividat-playos-test-disks/dummy/play-disk-$GITHUB_REF_NAME.img.zst"
+          zstd --stdout "$disk_path" | aws s3 cp - --acl public-read
+
