@@ -38,5 +38,5 @@ jobs:
           md5sum $disk_path > /tmp/dummy
           disk_path=/tmp/dummy
           target_url="s3://dividat-playos-test-disks/dummy/play-disk-$GITHUB_REF_NAME.img.zst"
-          zstd --stdout "$disk_path" | aws s3 cp - --acl public-read
+          zstd --stdout "$disk_path" | aws s3 cp - "$target_url" --acl public-read
 
