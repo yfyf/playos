@@ -1,7 +1,7 @@
 rec {
     fullProductName = "Dividat PlayOS";
     safeProductName = "playos";
-    version = "2025.3.0-VALIDATION";
+    version = "2025.3.1-DKERSUP";
 
     greeting = label: ''
                                            _
@@ -42,6 +42,10 @@ rec {
         ./application/power-management/default.nix
         ./application/limit-vtes.nix
       ];
+
+
+      boot.kernelPackages = pkgs.linuxKernel.packages.linux_6_1;
+
 
       boot.blacklistedKernelModules = [
         # Blacklist NFC modules conflicting with CCID/PCSC

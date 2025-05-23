@@ -25,6 +25,15 @@ let
             ./ocaml-modules/ppx_protocol_conv_jsonm {};
       });
 
+      wpa_supplicant = super.wpa_supplicant.overrideAttrs (old: {
+        version = "2.10";
+        src = super.fetchurl {
+          url = "https://w1.fi/releases/wpa_supplicant-2.10.tar.gz";
+          sha256 = "sha256-IN965RVLODA1X4q0JpEjqHr/3qWf50/pKSqR0Nfhey8=";
+        };
+	    patches = [];
+      });
+
     };
 
 in
