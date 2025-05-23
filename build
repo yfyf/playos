@@ -63,7 +63,11 @@ elif [ "$TARGET" == "validation" ]; then
     --arg updateUrl https://dist.dividat.com/releases/playos/validation/ \
     --arg deployUrl s3://dist.dividat.ch/releases/playos/validation/ \
     --arg kioskUrl https://val-play.dividat.com/ \
-    --arg buildDisk false)
+    --arg buildInstaller true \
+    --arg buildVm false \
+    --arg buildDisk false \
+    --arg buildBundle false \
+    --arg buildLive false)
 
   echo
   echo "Run ./result/bin/deploy-update to deploy."
