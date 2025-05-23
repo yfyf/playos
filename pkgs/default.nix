@@ -25,8 +25,15 @@ let
             ./ocaml-modules/ppx_protocol_conv_jsonm {};
       });
 
-    };
+      connman = super.connman.overrideAttrs (old: {
+        version = "1.42";
+        src = super.fetchurl {
+          url = "mirror://kernel/linux/network/connman/connman-1.42.tar.xz";
+          hash = "sha256-o+a65G/Age8una48qk92Sd6JLD3mIsICg6wMqBQjwqo=";
+        };
+      });
 
+    };
 in
 
 import nixpkgs {
