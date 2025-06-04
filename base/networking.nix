@@ -40,7 +40,14 @@ in
       SingleConnectedTechnology=false
 
       # Enable online check to favour connected services
-      EnableOnlineCheck=true
+      OnlineCheckMode=continuous
+      OnlineCheckIPv4URL=${config.playos.kioskUrl}
+      OnlineCheckIPv6URL=${config.playos.kioskUrl}
+      OnlineCheckSuccessesThreshold=1
+      OnlineCheckFailuresThreshold=3
+
+      OnlineCheckInitialInterval=1
+      OnlineCheckMaxInterval=3
     '';
   };
 
