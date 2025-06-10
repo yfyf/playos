@@ -4,8 +4,10 @@ runs:
   steps:
   - name: Output to file
     run: nix path-info --all --sigs --size > nix-path-info.txt
+    shell: bash
   - name: Print summary
     run: cat nix-path-info.txt | fgrep ultimate | awk '{print $2}' | awk '{s+=$1} END {printf "%.0f\n", s}' | numfmt --to=iec
+    shell: bash
   - name: 'Upload nix-path-info'
     uses: actions/upload-artifact@v4
     with:
