@@ -11,6 +11,6 @@ runs:
   - name: 'Upload nix-path-info'
     uses: actions/upload-artifact@v4
     with:
-      name: nix-path-info
-      path: nix-path-info.txt
+      name: nix-path-info-${{ github.job }}.txt
+      path: nix-paths/
       retention-days: 5
