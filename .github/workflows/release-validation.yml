@@ -8,3 +8,4 @@ jobs:
     - uses: actions/checkout@v4
     - uses: ./.github/actions/prep-build-env
     - run: NIXPKGS_ALLOW_UNFREE=1 nix-build testing/release-validation.nix
+    - uses: ./.github/actions/upload-nix-store-info
