@@ -190,6 +190,7 @@ pkgs.testers.runNixOSTest {
   in ''
 ${builtins.readFile ../helpers/nixos-test-script-helpers.py}
 import requests
+import random
 
 bad_simulated_aps = set("${toString badSimulatedAPs}".split())
 good_simulated_aps = set("${toString goodSimulatedAPs}".split())
@@ -269,6 +270,7 @@ with TestCase("controller sees the wifi iface and APs") as t:
 
 # if above passed, we know these are all visible
 GOOD_SERVICES =       [s for s in services if s['name'] in good_simulated_aps]
+random.shuffle(GOOD_SERVICES) # just to check if flakiness is due to test-ap-sae specifically
 BAD_SERVICES =        [s for s in services if s['name'] in bad_simulated_aps]
 PASSPHRASE_SERVICES = [s for s in GOOD_SERVICES if s['name'] != "test-ap-open"]
 
