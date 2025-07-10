@@ -19,9 +19,9 @@ in
 pkgs.nixosTest {
   name = "Kiosk gracefully switches between output screens and modes";
 
-  nodes.machine = { config, ... }: {
+  nodes.machine = { config, modulesPath, ... }: {
       imports = [
-        (pkgs.importFromNixos "tests/common/user-account.nix")
+        "${modulesPath}/tests/common/user-account.nix"
       ];
 
       virtualisation.qemu.options = [

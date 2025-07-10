@@ -1,14 +1,12 @@
 { stdenv, lib
 , application
 , squashfsTools, closureInfo, makeInitrd, linkFarm
-, importFromNixos
+, pkgs
 , writeScript, dialog
 , vim, grub2_efi, rauc
 , squashfsCompressionOpts ? "-comp xz -Xdict-size 100%"}:
 with lib;
 let
-  nixos = importFromNixos "";
-
   rescue_kiosk = writeScript "rescue-kiosk.sh" ''
     # Setup a tempfile
     tempfile=`(tempfile) 2>/dev/null` || tempfile=/tmp/test$$
@@ -55,7 +53,7 @@ let
   '';
 
 in
-(nixos {
+(pkgs.nixos {
   configuration = {config,...}: {
     # disable installation of bootloader
     boot.loader.grub.enable = false;

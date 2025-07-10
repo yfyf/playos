@@ -1,9 +1,8 @@
 # Build NixOS system
 {pkgs, lib, kioskUrl, playos-controller, application}:
 with lib;
-let nixos = pkgs.importFromNixos ""; in
-(nixos {
-  configuration = {...}: {
+(pkgs.nixos {
+  configuration = { modulesPath, ...}: {
     imports = [
       # Base layer
       ((import ../base) {
@@ -13,7 +12,7 @@ let nixos = pkgs.importFromNixos ""; in
       # Application-specific
       application.module
 
-      (pkgs.importFromNixos "modules/installer/cd-dvd/iso-image.nix")
+      "${modulesPath}/installer/cd-dvd/iso-image.nix"
     ];
 
     config = {

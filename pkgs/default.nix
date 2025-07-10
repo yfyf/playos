@@ -10,8 +10,7 @@ let
 
   overlay =
     self: super: {
-
-      importFromNixos = path: import (nixpkgs + "/nixos/" + path);
+      nixos = import (nixpkgs + "/nixos");
 
       rauc = (import ./rauc) super;
 

@@ -16,9 +16,9 @@ in
 pkgs.nixosTest {
   name = "Kiosk can play opus files";
 
-  nodes.machine = { config, ... }: {
+  nodes.machine = { config, modulesPath, ... }: {
       imports = [
-        (pkgs.importFromNixos "tests/common/user-account.nix")
+        "${modulesPath}/tests/common/user-account.nix"
       ];
 
       services.static-web-server.enable = true;

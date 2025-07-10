@@ -1,8 +1,6 @@
 {pkgs, lib, kioskUrl, playos-controller, application}:
 
-let nixos = pkgs.importFromNixos ""; in
-
-(nixos {
+(pkgs.nixos {
   configuration = {...}: {
   imports = [
     # Base layer

@@ -1,12 +1,10 @@
 {pkgs, qemu, disk, overlayPath, safeProductName, updateUrl, ...}:
 let
-   nixos = pkgs.importFromNixos "";
-
    playosRoot = ./../../../..;
 
    nextVersion = "9999.99.99-TESTMAGIC";
 
-   minimalTestSystem = (nixos {
+   minimalTestSystem = (pkgs.nixos {
       configuration = {modulesPath, ...}: {
         imports = [
             (modulesPath + "/profiles/qemu-guest.nix")

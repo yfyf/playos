@@ -1,8 +1,7 @@
 # Build an installable system image assuming a disk layout of a full A/B installation
 {pkgs, lib, updateCert, kioskUrl, watchdogUrls, playos-controller, application, extraModules ? [ ] }:
 with lib;
-let nixos = pkgs.importFromNixos ""; in
-(nixos {
+(pkgs.nixos {
   configuration = {...}: {
     imports = [
       # Base layer of PlayOS
