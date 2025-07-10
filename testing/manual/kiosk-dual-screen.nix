@@ -21,7 +21,7 @@ pkgs.nixosTest {
 
   nodes.machine = { config, modulesPath, ... }: {
       imports = [
-        "${modulesPath}/tests/common/user-account.nix"
+        "${modulesPath}/../tests/common/user-account.nix"
       ];
 
       virtualisation.qemu.options = [

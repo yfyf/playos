@@ -58,8 +58,8 @@ pkgs.nixosTest {
 
     client = { config, modulesPath, ... }: {
       imports = [
-        "${modulesPath}/tests/common/user-account.nix"
-        "${modulesPath}/tests/common/x11.nix"
+        "${modulesPath}/../tests/common/user-account.nix"
+        "${modulesPath}/../tests/common/x11.nix"
       ];
 
       virtualisation.vlans = [ 1 ];
