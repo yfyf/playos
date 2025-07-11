@@ -4,7 +4,7 @@
 }:
 let
   configuration = (import ./configuration.nix) {
-    inherit config pkgs lib install-playos version safeProductName fullProductName greeting;
+    inherit install-playos version safeProductName fullProductName greeting;
   };
 
 in

@@ -1,7 +1,7 @@
-{ config, pkgs, lib, modulesPath, install-playos, version, safeProductName, fullProductName, greeting, ... }:
+{ install-playos, version, safeProductName, fullProductName, greeting }:
 
+{ config, pkgs, lib, modulesPath, ...}:
 with lib;
-
 {
   imports = [
     "${modulesPath}/installer/cd-dvd/iso-image.nix"
