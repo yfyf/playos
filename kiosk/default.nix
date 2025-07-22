@@ -32,6 +32,7 @@ python3Packages.buildPythonApplication rec {
     pyqt6-webengine
     pytest
     qt6.qtbase
+    qt6.qtvirtualkeyboard
     requests
     types-requests
     playos-proxy-utils
@@ -44,6 +45,8 @@ python3Packages.buildPythonApplication rec {
   shellHook = ''
     # Give access to kiosk_browser module
     export PYTHONPATH=./:$PYTHONPATH
+
+    export QT_IM_MODULE=qtvirtualkeyboard
 
     # Setup Qt environment
     bashdir=$(mktemp -d)
