@@ -1,8 +1,38 @@
 from PyQt6 import QtWidgets, QtCore, QtGui
 import time
 import logging
+from PyQt6.QtQuickWidgets import QQuickWidget
+from PyQt6.QtCore import QUrl, Qt, QEvent, QPoint
+from PyQt6.QtWidgets import QApplication
 
 from kiosk_browser import browser_widget, captive_portal, dialogable_widget, proxy as proxy_module
+
+class KbdWidget(QQuickWidget):
+    def __init__(self):
+        super(KbdWidget, self).__init__()
+        # TODO: figure out paths
+        widget_qml = QUrl.fromLocalFile("kiosk_browser/inputpanel.qml")
+        self.setSource(widget_qml)
+
+        self.visibleWidth = 600
+        # TODO: this is now an approximation, leaves extra space around
+        # need to read actual height of the keyboard somehow
+        self.visibleHeight = round(self.visibleWidth / 3)
+
+        # TODO: maybe we can respond to InputPanel (i.e. root object) resizing
+        # itself and inform parent widget it needs to move it according to the
+        # resized dimensions?
+        self.setResizeMode(QQuickWidget.ResizeMode.SizeViewToRootObject);
+        self.rootObject().setProperty("visibleWidth", self.visibleWidth)
+        self.installEventFilter(self)
+
+    def eventFilter(self, source, event):
+        #print(f"{event.type()=} {event=}")
+        if event.type() == QEvent.Type.RequestSoftwareInputPanel:
+            print("RequestSoftwareInputPanel event")
+            #self._dialogable_browser.inner_widget().page().runJavaScript("document.activeElement",
+            #                                                      lambda x: print(x))
+        return super(QQuickWidget, self).eventFilter(source, event)
 
 class MainWidget(QtWidgets.QWidget):
     """ Show website from kiosk_url.
@@ -53,6 +83,11 @@ class MainWidget(QtWidgets.QWidget):
         self._layout.addWidget(self._dialogable_browser)
         self.setLayout(self._layout)
 
+
+        self._kbdWidget = KbdWidget()
+        self._kbdWidget.setParent(self)
+        self._kbdWidget.show()
+
         # Shortcuts
         QtGui.QShortcut(toggle_settings_key, self).activated.connect(self._toggle_settings)
 
@@ -94,6 +129,11 @@ class MainWidget(QtWidgets.QWidget):
                 self._is_captive_portal_open = False
 
     def eventFilter(self, source, event):
+        if event.type() == QtCore.QEvent.Type.KeyRelease:
+            if event.key() == QtCore.Qt.Key.Key_Escape:
+                # TODO: hack, but it works?
+                QApplication.sendEvent(self, QEvent(QEvent.Type.CloseSoftwareInputPanel));
+
         # Toggle settings with a long press on the Menu key
         if event.type() == QtCore.QEvent.Type.ShortcutOverride:
             if event.key() == QtCore.Qt.Key.Key_Menu:
@@ -119,6 +159,19 @@ class MainWidget(QtWidgets.QWidget):
         # Precautionary sleep to allow Chromium to update screens
         time.sleep(1)
         self._resize_to_screen(new_primary.geometry())
+
+    # TODO: this only works in fullscreen mode, it would would be more
+    # appropriate to respond to window events
+    def resize(self, geom):
+        super(MainWidget, self).resize(geom)
+        # The virtual keyboard needs to be positioned explicitly w.r.t. the
+        # parent window, because the QQuickWidget that holds it cannot be
+        # rendered transparently on top of the QWidget and therefore the
+        # QQuickWidget size has to be exactly the size keyboard.
+        self._kbdWidget.move(QPoint(
+                round((geom.width() - self._kbdWidget.visibleWidth) / 2),
+                round(geom.height() - self._kbdWidget.visibleHeight)
+        ))
 
     def _resize_to_screen(self, new_geom):
         screen_size = new_geom.size()
