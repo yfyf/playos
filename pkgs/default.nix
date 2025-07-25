@@ -31,6 +31,14 @@ let
         playos-proxy-utils = self.callPackage ../proxy-utils {};
       });
 
+      qt6 = super.qt6.overrideScope  (qtself: qtsuper: {
+          qtvirtualkeyboard = qtsuper.qtvirtualkeyboard.overrideAttrs (previous: {
+                cmakeFlags = [
+                    "-DFEATURE_vkb_arrow_keynavigation=ON"
+                ] ++ (super.lib.lists.optionals (previous ? cmakeFlags) previous.cmakeFlags);
+          });
+      });
+
     };
 in
 
