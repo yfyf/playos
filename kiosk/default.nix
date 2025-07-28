@@ -50,8 +50,6 @@ python3Packages.buildPythonApplication rec {
     # Give access to kiosk_browser module
     export PYTHONPATH=./:$PYTHONPATH
 
-    export QT_IM_MODULE=qtvirtualkeyboard
-
     # Setup Qt environment
     bashdir=$(mktemp -d)
     makeWrapper "$(type -p bash)" "$bashdir/bash" "''${qtWrapperArgs[@]}"
