@@ -1,38 +1,76 @@
 from PyQt6 import QtWidgets, QtCore, QtGui
 import time
 import logging
+import importlib.resources
 from PyQt6.QtQuickWidgets import QQuickWidget
 from PyQt6.QtCore import QUrl, Qt, QEvent, QPoint
 from PyQt6.QtWidgets import QApplication
 
 from kiosk_browser import browser_widget, captive_portal, dialogable_widget, proxy as proxy_module
 
+
 class KbdWidget(QQuickWidget):
+    def visibleHeight(self):
+        # TODO: read the ratio from QtQuick.VirtualKeyboard.Styles
+        return round(self.visibleWidth * 800 / 2560)
+
+    def setVisibleWidth(self, width):
+        self.visibleWidth = width
+
+        self.rootObject().setProperty("visibleWidth", width)
+
+    # The QQuickWidget holding the virtual keyboard is sized explicitly w.r.t.
+    # the parent widget/window and the positioning is handled by the parent
+    # widget (see MainWidget._positionKbdWidget).
+    #
+    # An alternative approach would be to make the QQuickWidget take the size of
+    # the whole window, enable transparency (see _make_transparent), make the
+    # InputPanel a sub-element and move the positioning of the keyboard logic to
+    # QML. However, this would prevent interaction with the page items
+    # underneath the keyboard (until it is hidden) and might have other
+    # unexpected consequences.
+    def updateParentWidth(self, parentWidth):
+        self.setVisibleWidth(parentWidth / 2)
+
+
+    def _make_transparent(self):
+        # A semi-hack to make the QQuickWidget have transparent background, see:
+        # https://doc.qt.io/qt-6/qquickwidget.html#limitations
+        self.setAttribute(Qt.WidgetAttribute.WA_AlwaysStackOnTop)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setClearColor(Qt.GlobalColor.transparent)
+
+    def ensureRootObjectInitialized(self):
+        retries = 3
+        while retries > 0:
+            if self.rootObject() is None:
+                retries -= 1
+                logging.info("Waiting for KbdWidget QML to initialize...")
+                time.sleep(1)
+            else:
+                logging.info("KbdWidget initialized!")
+                return
+        raise RuntimeError("Failed to initialize KbdWidget QML")
+
+
     def __init__(self):
         super(KbdWidget, self).__init__()
-        # TODO: figure out paths
-        widget_qml = QUrl.fromLocalFile("kiosk_browser/inputpanel.qml")
-        self.setSource(widget_qml)
 
-        self.visibleWidth = 600
-        # TODO: this is now an approximation, leaves extra space around
-        # need to read actual height of the keyboard somehow
-        self.visibleHeight = round(self.visibleWidth / 3)
+        input_panel_qml = importlib.resources.files('kiosk_browser').joinpath('inputpanel.qml')
+        with importlib.resources.as_file(input_panel_qml) as f:
+            logging.info(f"About to load widget from {f}")
+            widget_qml = QUrl.fromLocalFile(str(f))
+            self.setSource(widget_qml)
 
-        # TODO: maybe we can respond to InputPanel (i.e. root object) resizing
-        # itself and inform parent widget it needs to move it according to the
-        # resized dimensions?
+        # TODO: is this paranoia?
+        self.ensureRootObjectInitialized()
+
+        #self._make_transparent()
+
+        self.visibleWidth = 0
+
         self.setResizeMode(QQuickWidget.ResizeMode.SizeViewToRootObject);
-        self.rootObject().setProperty("visibleWidth", self.visibleWidth)
-        self.installEventFilter(self)
 
-    def eventFilter(self, source, event):
-        #print(f"{event.type()=} {event=}")
-        if event.type() == QEvent.Type.RequestSoftwareInputPanel:
-            print("RequestSoftwareInputPanel event")
-            #self._dialogable_browser.inner_widget().page().runJavaScript("document.activeElement",
-            #                                                      lambda x: print(x))
-        return super(QQuickWidget, self).eventFilter(source, event)
 
 class MainWidget(QtWidgets.QWidget):
     """ Show website from kiosk_url.
@@ -88,11 +126,44 @@ class MainWidget(QtWidgets.QWidget):
         self._kbdWidget.setParent(self)
         self._kbdWidget.show()
 
+        self._input_method = QApplication.inputMethod()
+        # Note 1: for some reason inputItemClipRectangle is always an empty QRect,
+        # but cursor position is returned correctly, so we use that.
+        # Note 2: The interleaving of cursorRectangleChanged and visibleChanged events
+        # depends on the input field focus sequence, so we simply respond to both
+        self._input_method.cursorRectangleChanged.connect(self._positionKbdWidget)
+        self._input_method.visibleChanged.connect(self._positionKbdWidget)
+
+
         # Shortcuts
         QtGui.QShortcut(toggle_settings_key, self).activated.connect(self._toggle_settings)
 
         # Look at events with the eventFilter function
         self.installEventFilter(self)
+
+    # Move the virtual keyboard to top or bottom of screen depending on where
+    # the text input cursor is currently
+    # Note 1: Using the pre-computed visibleWidth and visibleHeight instead of
+    # there are strange race conditions due to SizeViewToRootObject that cause
+    # invalid _kbdWidget.width()/height()
+    # Note 2: can be extended to move keyboard left/right
+    def _positionKbdWidget(self):
+        if not self._input_method.isVisible():
+            return
+
+        cursorTop = self._input_method.cursorRectangle().top()
+        logging.info(f"Focus change: {cursorTop=}")
+
+        kbdX = round((self.width() - self._kbdWidget.visibleWidth) / 2)
+
+        if cursorTop > (self.height() / 2):
+            # move to the top
+            kbdY = 0
+        else:
+            # move to bottom
+            kbdY = round(self.height() - self._kbdWidget.visibleHeight())
+
+        self._kbdWidget.move(QPoint(kbdX, kbdY))
 
     def closeEvent(self, event):
         event.accept()
@@ -129,10 +200,10 @@ class MainWidget(QtWidgets.QWidget):
                 self._is_captive_portal_open = False
 
     def eventFilter(self, source, event):
+        # Hide virtual keyboard with Escape key
         if event.type() == QtCore.QEvent.Type.KeyRelease:
             if event.key() == QtCore.Qt.Key.Key_Escape:
-                # TODO: hack, but it works?
-                QApplication.sendEvent(self, QEvent(QEvent.Type.CloseSoftwareInputPanel));
+                self._input_method.hide()
 
         # Toggle settings with a long press on the Menu key
         if event.type() == QtCore.QEvent.Type.ShortcutOverride:
@@ -160,18 +231,9 @@ class MainWidget(QtWidgets.QWidget):
         time.sleep(1)
         self._resize_to_screen(new_primary.geometry())
 
-    # TODO: this only works in fullscreen mode, it would would be more
-    # appropriate to respond to window events
-    def resize(self, geom):
-        super(MainWidget, self).resize(geom)
-        # The virtual keyboard needs to be positioned explicitly w.r.t. the
-        # parent window, because the QQuickWidget that holds it cannot be
-        # rendered transparently on top of the QWidget and therefore the
-        # QQuickWidget size has to be exactly the size keyboard.
-        self._kbdWidget.move(QPoint(
-                round((geom.width() - self._kbdWidget.visibleWidth) / 2),
-                round(geom.height() - self._kbdWidget.visibleHeight)
-        ))
+    def resizeEvent(self, event):
+        self._kbdWidget.updateParentWidth(event.size().width())
+        super().resizeEvent(event)
 
     def _resize_to_screen(self, new_geom):
         screen_size = new_geom.size()

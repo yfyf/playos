@@ -2,7 +2,7 @@ import sys
 import os
 import logging
 import signal
-from PyQt6.QtCore import Qt, QUrl
+from PyQt6.QtCore import Qt, QUrl, QObject, QEvent
 from PyQt6.QtGui import QKeySequence
 from PyQt6.QtWidgets import QApplication
 
