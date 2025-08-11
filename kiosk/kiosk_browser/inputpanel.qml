@@ -27,19 +27,30 @@ InputPanel {
     property int visibleWidth
 
     id: inputPanel
-    z: 0
-    width: 0
+    x: 0
+    y: 0
+    z: 99
+    width: visibleWidth
 
     states: State {
         name: "visible"
         when: inputPanel.active
         // TODO: can try to debounce here with `StateChangeScript`?
         PropertyChanges {
-            z: 99
             target: inputPanel
-            width: visibleWidth
         }
     }
+
+    Keys.onPressed: (event) => {
+        console.log("Keys.onPressed: " + event.key);
+    }
+
+    //function invokeKeyPress(key: int) : string {
+    //    console.log("Got key:", key)
+    //    InputEngine.virtualKeyPress(key, "", 0, false)
+    //    InputEngine.virtualKeyRelease(key, "", 0, false)
+    //    return "some return value"
+    //}
 
     // Useful debugging prints
     onStateChanged: {
@@ -49,6 +60,7 @@ InputPanel {
         console.log("Window.height: " + Window.height)
         console.log("visibleWidth:" + visibleWidth)
         console.log("InputContext.cursorRectangle" + InputContext.cursorRectangle)
+        //InputContext.commit()
     }
 
     // TODO: this would look good for `height`, but since height is initially unset

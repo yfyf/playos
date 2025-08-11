@@ -3,9 +3,9 @@
 let
 
   nixpkgs = builtins.fetchTarball {
-    # release-24.11 2025-02-10
-    url = "https://github.com/NixOS/nixpkgs/archive/edd84e9bffdf1c0ceba05c0d868356f28a1eb7de.tar.gz";
-    sha256 = "1gb61gahkq74hqiw8kbr9j0qwf2wlwnsvhb7z68zhm8wa27grqr0";
+    # release-25.05
+    url = "https://github.com/NixOS/nixpkgs/archive/13e8d35b7d6028b7198f8186bc0347c6abaa2701.tar.gz";
+    sha256 = "0nqbvgmm7pbpyd8ihg2bi62pxihj8r673bc9ll4qhi6xwlfqac5q";
   };
 
   overlay =
@@ -31,8 +31,18 @@ let
         playos-proxy-utils = self.callPackage ../proxy-utils {};
       });
 
-      qt6 = super.qt6.overrideScope  (qtself: qtsuper: {
+      qt6 = super.qt6.overrideScope (qtself: qtsuper: {
           qtvirtualkeyboard = qtsuper.qtvirtualkeyboard.overrideAttrs (previous: {
+                src = ../../qtvirtualkeyboard;
+                cmakeBuildType = "Debug";
+                debug = true;
+                developerBuild = true;
+                qmakeFlags = [
+                    "CONFIG+=-vkb-enable=en_US"
+                    "CONFIG+=vkb-enable=en_US"
+                    "CONFIG+=-no-vkb-hunspell"
+                    "CONFIG+=no-vkb-hunspell"
+                ];
                 cmakeFlags = [
                     "-DFEATURE_vkb_arrow_keynavigation=ON"
                 ] ++ (super.lib.lists.optionals (previous ? cmakeFlags) previous.cmakeFlags);

@@ -14,6 +14,8 @@ class KbdWidget(QQuickWidget):
         # TODO: read the ratio from QtQuick.VirtualKeyboard.Styles
         return round(self.visibleWidth * 800 / 2560)
 
+    # TODO: pass parent widget as setContextProperty and just read
+    # these properties from QML?
     def setVisibleWidth(self, width):
         self.visibleWidth = width
 
@@ -40,6 +42,7 @@ class KbdWidget(QQuickWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setClearColor(Qt.GlobalColor.transparent)
 
+    # TODO: this can use QQuickWidget.status to detect error early
     def ensureRootObjectInitialized(self):
         retries = 3
         while retries > 0:
@@ -68,8 +71,12 @@ class KbdWidget(QQuickWidget):
         #self._make_transparent()
 
         self.visibleWidth = 0
+        # TODO: is this sufficient to enable mouse-click-usage?
+        # TODO: re-enable once done debuggin the initial-focus-issue
+        #self.setAttribute(Qt.WidgetAttribute.WA_AcceptTouchEvents)
+        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
-        self.setResizeMode(QQuickWidget.ResizeMode.SizeViewToRootObject);
+        self.setResizeMode(QQuickWidget.ResizeMode.SizeRootObjectToView);
 
 
 class MainWidget(QtWidgets.QWidget):
@@ -124,15 +131,17 @@ class MainWidget(QtWidgets.QWidget):
 
         self._kbdWidget = KbdWidget()
         self._kbdWidget.setParent(self)
-        self._kbdWidget.show()
+        #self._kbdWidget.setWindowModality(Qt.WindowModality.ApplicationModal); 
+        #self._kbdWidget.show()
 
         self._input_method = QApplication.inputMethod()
         # Note 1: for some reason inputItemClipRectangle is always an empty QRect,
         # but cursor position is returned correctly, so we use that.
         # Note 2: The interleaving of cursorRectangleChanged and visibleChanged events
         # depends on the input field focus sequence, so we simply respond to both
-        self._input_method.cursorRectangleChanged.connect(self._positionKbdWidget)
-        self._input_method.visibleChanged.connect(self._positionKbdWidget)
+        #self._input_method.cursorRectangleChanged.connect(self._positionKbdWidget)
+        #self._input_method.visibleChanged.connect(self._positionKbdWidget)
+        #self._positionKbdWidget()
 
 
         # Shortcuts
@@ -148,11 +157,14 @@ class MainWidget(QtWidgets.QWidget):
     # invalid _kbdWidget.width()/height()
     # Note 2: can be extended to move keyboard left/right
     def _positionKbdWidget(self):
-        if not self._input_method.isVisible():
-            return
+        #if not self._input_method.isVisible():
+        #    self._kbdWidget.resize(QtCore.QSize(0, 0))
+        #    return
 
         cursorTop = self._input_method.cursorRectangle().top()
-        logging.info(f"Focus change: {cursorTop=}")
+
+        logging.info(f"Focus change: {cursorTop=} {self._kbdWidget.hasFocus()=} {self._kbdWidget.focusProxy()=} {self._kbdWidget.keyboardGrabber()=}")
+        logging.info(f"Input Method-pre: {self._input_method.isVisible()=} {self._input_method.keyboardRectangle()=}")
 
         kbdX = round((self.width() - self._kbdWidget.visibleWidth) / 2)
 
@@ -163,7 +175,15 @@ class MainWidget(QtWidgets.QWidget):
             # move to bottom
             kbdY = round(self.height() - self._kbdWidget.visibleHeight())
 
+        self._kbdWidget.resize(QtCore.QSize(round(self._kbdWidget.visibleWidth), round(self._kbdWidget.visibleHeight())))
         self._kbdWidget.move(QPoint(kbdX, kbdY))
+        logging.info(f"Input Method-post: {self._input_method.isVisible()=} {self._input_method.keyboardRectangle()=}")
+        self._input_method.show()
+        #self._input_method.reset()
+        #self._kbdWidget.setFocus()
+        #self._kbdWidget.activateWindow()
+        #self._kbdWidget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+
 
     def closeEvent(self, event):
         event.accept()
@@ -200,8 +220,22 @@ class MainWidget(QtWidgets.QWidget):
                 self._is_captive_portal_open = False
 
     def eventFilter(self, source, event):
+        #qmlObj = self._kbdWidget.rootObject()
+        #msg = "foobar"
+        #if event.type() == QtCore.QEvent.Type.KeyPress:
+        #    QtCore.QMetaObject.invokeMethod(qmlObj, "invokeKeyPress",
+        #            QtCore.Q_RETURN_ARG(str),
+        #            QtCore.Q_ARG(int, event.key()),
+        #    )
+
         # Hide virtual keyboard with Escape key
         if event.type() == QtCore.QEvent.Type.KeyRelease:
+            print(f"===== KEY RELEASE {event.key()} IN MAIN WIDGET ====")
+            #QtCore.QMetaObject.invokeMethod(qmlObj, "invokeKeyPress",
+            #        QtCore.Q_RETURN_ARG(str),
+            #        QtCore.Q_ARG(int, event.key()),
+            #)
+            #QApplication.sendEvent(self._kbdWidget, event)
             if event.key() == QtCore.Qt.Key.Key_Escape:
                 self._input_method.hide()
 
@@ -233,6 +267,7 @@ class MainWidget(QtWidgets.QWidget):
 
     def resizeEvent(self, event):
         self._kbdWidget.updateParentWidth(event.size().width())
+        self._positionKbdWidget()
         super().resizeEvent(event)
 
     def _resize_to_screen(self, new_geom):
