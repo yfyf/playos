@@ -1,5 +1,6 @@
 from PyQt6 import QtWidgets, QtCore, QtGui
 from typing import Callable
+from PyQt6.QtWidgets import QApplication
 
 overlay_color: str = '#888888'
 

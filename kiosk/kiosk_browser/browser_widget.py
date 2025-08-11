@@ -64,6 +64,7 @@ class BrowserWidget(QtWidgets.QWidget):
         self._webview.setUrl(url)
         self._view(Status.LOADING)
         self._webview.loadFinished.connect(self._load_finished)
+        self.setFocusProxy(self._webview)
 
         # Shortcut to manually reload
         QtGui.QShortcut('CTRL+R', self).activated.connect(self.reload)
@@ -140,7 +141,6 @@ class BrowserWidget(QtWidgets.QWidget):
         elif status == Status.LOADED:
             self._loading_page.hide()
             self._network_error_page.hide()
-            self.setFocusProxy(self._webview)
             self._webview.show()
             # Set focus by clearing first, otherwise focus is lost after using CTRL+R
             # TODO: replace this with

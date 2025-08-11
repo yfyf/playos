@@ -182,7 +182,6 @@ class MainWidget(QtWidgets.QWidget):
         #self._input_method.reset()
         #self._kbdWidget.setFocus()
         #self._kbdWidget.activateWindow()
-        #self._kbdWidget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
 
     def closeEvent(self, event):
