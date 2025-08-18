@@ -95,39 +95,12 @@ def start(kiosk_url, settings_url, toggle_settings_key, fullscreen = True):
     signal.signal(signal.SIGINT, quit_on_signal)
     signal.signal(signal.SIGTERM, quit_on_signal)
 
-    #mainWidget.clearFocus()
-    #mainWidget.setFocus()
-    #mainWidget.window().windowHandle().raise_()
-    #mainWidget.setFocus()
-
-    #mainWidget.window().windowHandle().raise_()
-
-
-    def print_widget_tree(widget, indent=0):
-        # Get widget class name
-        cls_name = widget.metaObject().className()
-        # Get Python id and C++ pointer address
-        py_addr = hex(id(widget))
-        cpp_addr = hex(sip.unwrapinstance(widget))
-        
-        # Print with indentation
-        print(" " * indent + f"{cls_name} "
-              f"(Python id: {py_addr}, cpp_addr: {cpp_addr} objectName: '{widget.objectName()}')")
-
-        for child in widget.children():
-            if isinstance(child, QWidget):
-                print_widget_tree(child, indent + 4)
-
-    print("====== WIDGET TREE =======")
-    print_widget_tree(mainWidget)
-    print("==========================")
-
     # Start application
     app.exec()
 
 def parseUrl(url):
     parsed_url = QUrl(url)
     if not parsed_url.isValid():
-        raise InvalidUrl('Failed to parse URL "%s"' % url) from Exception
+        raise ValueError('Failed to parse URL "%s"' % url)
     else:
         return parsed_url
