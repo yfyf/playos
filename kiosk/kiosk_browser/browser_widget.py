@@ -2,7 +2,6 @@ from PyQt6 import QtCore, QtWidgets, QtWebEngineWidgets, QtWebEngineCore, QtGui,
 from enum import Enum, auto
 import logging
 import re
-import time
 from PyQt6.QtWidgets import QApplication
 
 from kiosk_browser import system
@@ -142,45 +141,6 @@ class BrowserWidget(QtWidgets.QWidget):
             self._loading_page.hide()
             self._network_error_page.hide()
             self._webview.show()
-            # Set focus by clearing first, otherwise focus is lost after using CTRL+R
-            # TODO: replace this with
-            # QWebEngineSettings::FocusOnNavigationEnabled available since Qt 5.8
-
-            print("==== _webview status == LOADED ==========")
-            #print("=== _webview.clearFocus() ===============") 
-            #self._webview.clearFocus()
-            #print("=== _webview.setFocus() =================")
-            #self._webview.setFocus()
-            #print("=== setFocus done, debug info: ==========") 
-
-            print(f"    {QApplication.focusWidget()=}")
-            print(f"    {QApplication.focusWindow()=}")
-            print(f"    {QApplication.activeWindow()=}")
-            print(f"    {self.isActiveWindow()=}")
-
-            windows = QApplication.allWindows()
-            for window in windows:
-                print(f"    {window=} {window.isActive()=}")
-            print("========================================")
-
-
-            #QApplication.focusWindow().requestActivate()
-
-            #self.activateWindow()
-            #self._webview.clearFocus()
-            #self._webview.setFocus()
-
-            #self._webview.clearFocus()
-            #input_method.update(QtCore.Qt.InputMethodQuery.ImQueryAll)
-            #print(f"{input_method.commit()=}")
-            #print(f"{input_method.commit()=}")
-            #print(f"{input_method.commit()=}")
-            #print(f"{self._webview.clearFocus()=}")
-            #print(f"{input_method.update(QtCore.Qt.InputMethodQuery.ImQueryAll)=}")
-            #print(f"{self._webview.setFocus()=}")
-            #input_method.commit()
-            #input_method.update(QtCore.Qt.InputMethodQuery.ImQueryAll)
-
 
 def user_agent_with_system(user_agent, system_name, system_version):
     """Inject a specific system into a user agent string"""

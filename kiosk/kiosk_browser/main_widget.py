@@ -72,7 +72,6 @@ class KbdWidget(QQuickWidget):
 
         self.visibleWidth = 0
         # TODO: is this sufficient to enable mouse-click-usage?
-        # TODO: re-enable once done debuggin the initial-focus-issue
         #self.setAttribute(Qt.WidgetAttribute.WA_AcceptTouchEvents)
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
@@ -131,18 +130,15 @@ class MainWidget(QtWidgets.QWidget):
 
         self._kbdWidget = KbdWidget()
         self._kbdWidget.setParent(self)
-        #self._kbdWidget.setWindowModality(Qt.WindowModality.ApplicationModal); 
-        #self._kbdWidget.show()
 
         self._input_method = QApplication.inputMethod()
         # Note 1: for some reason inputItemClipRectangle is always an empty QRect,
         # but cursor position is returned correctly, so we use that.
         # Note 2: The interleaving of cursorRectangleChanged and visibleChanged events
         # depends on the input field focus sequence, so we simply respond to both
-        #self._input_method.cursorRectangleChanged.connect(self._positionKbdWidget)
-        #self._input_method.visibleChanged.connect(self._positionKbdWidget)
-        #self._positionKbdWidget()
-
+        self._input_method.cursorRectangleChanged.connect(self._positionKbdWidget)
+        self._input_method.visibleChanged.connect(self._positionKbdWidget)
+        self._positionKbdWidget()
 
         # Shortcuts
         QtGui.QShortcut(toggle_settings_key, self).activated.connect(self._toggle_settings)
@@ -157,14 +153,11 @@ class MainWidget(QtWidgets.QWidget):
     # invalid _kbdWidget.width()/height()
     # Note 2: can be extended to move keyboard left/right
     def _positionKbdWidget(self):
-        #if not self._input_method.isVisible():
-        #    self._kbdWidget.resize(QtCore.QSize(0, 0))
-        #    return
+        if not self._input_method.isVisible():
+            self._kbdWidget.resize(QtCore.QSize(0, 0))
+            return
 
         cursorTop = self._input_method.cursorRectangle().top()
-
-        logging.info(f"Focus change: {cursorTop=} {self._kbdWidget.hasFocus()=} {self._kbdWidget.focusProxy()=} {self._kbdWidget.keyboardGrabber()=}")
-        logging.info(f"Input Method-pre: {self._input_method.isVisible()=} {self._input_method.keyboardRectangle()=}")
 
         kbdX = round((self.width() - self._kbdWidget.visibleWidth) / 2)
 
@@ -177,11 +170,7 @@ class MainWidget(QtWidgets.QWidget):
 
         self._kbdWidget.resize(QtCore.QSize(round(self._kbdWidget.visibleWidth), round(self._kbdWidget.visibleHeight())))
         self._kbdWidget.move(QPoint(kbdX, kbdY))
-        logging.info(f"Input Method-post: {self._input_method.isVisible()=} {self._input_method.keyboardRectangle()=}")
         self._input_method.show()
-        #self._input_method.reset()
-        #self._kbdWidget.setFocus()
-        #self._kbdWidget.activateWindow()
 
 
     def closeEvent(self, event):
@@ -219,24 +208,14 @@ class MainWidget(QtWidgets.QWidget):
                 self._is_captive_portal_open = False
 
     def eventFilter(self, source, event):
-        #qmlObj = self._kbdWidget.rootObject()
-        #msg = "foobar"
-        #if event.type() == QtCore.QEvent.Type.KeyPress:
-        #    QtCore.QMetaObject.invokeMethod(qmlObj, "invokeKeyPress",
-        #            QtCore.Q_RETURN_ARG(str),
-        #            QtCore.Q_ARG(int, event.key()),
-        #    )
-
         # Hide virtual keyboard with Escape key
-        if event.type() == QtCore.QEvent.Type.KeyRelease:
-            print(f"===== KEY RELEASE {event.key()} IN MAIN WIDGET ====")
-            #QtCore.QMetaObject.invokeMethod(qmlObj, "invokeKeyPress",
-            #        QtCore.Q_RETURN_ARG(str),
-            #        QtCore.Q_ARG(int, event.key()),
-            #)
-            #QApplication.sendEvent(self._kbdWidget, event)
+        if event.type() == QtCore.QEvent.Type.ShortcutOverride:
             if event.key() == QtCore.Qt.Key.Key_Escape:
-                self._input_method.hide()
+                if self._input_method.isVisible():
+                    self._input_method.hide()
+                    # prevent further processing
+                    event.accept()
+                    return True
 
         # Toggle settings with a long press on the Menu key
         if event.type() == QtCore.QEvent.Type.ShortcutOverride:
@@ -250,6 +229,7 @@ class MainWidget(QtWidgets.QWidget):
             if event.key() == QtCore.Qt.Key.Key_Menu and not event.isAutoRepeat():
                 self._menu_press_since = None
 
+        # TODO: This should just return False?
         return super(MainWidget, self).eventFilter(source, event)
 
     def handle_screen_change(self, new_primary):
