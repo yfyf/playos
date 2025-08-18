@@ -50,7 +50,8 @@ class KbdWidget(QQuickWidget):
             if self.status() == QQuickWidget.Status.Error:
                 raise RuntimeError(f"Failed to initialize inputpanel.qml: {self.errors()}")
 
-        #self._make_transparent()
+        # needed for keyboardBackgroundNumeric to work, see inputpanel.qml
+        self._make_transparent()
 
         self.setAttribute(Qt.WidgetAttribute.WA_AcceptTouchEvents)
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)

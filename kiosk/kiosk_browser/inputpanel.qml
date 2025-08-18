@@ -34,7 +34,29 @@ InputPanel {
         VirtualKeyboardSettings.closeOnReturn = true; // TODO: yes, temporarily?
         VirtualKeyboardSettings.handwritingModeDisabled = true;
         VirtualKeyboardSettings.defaultDictionaryDisabled = true;
+
+        // we do not use selectionList and this is needed for keyboardBackgroundNumeric
+        keyboard.style.selectionListBackground = null;
     }
+
+    Component {
+        id: keyboardBackgroundDefault;
+        Rectangle {
+            color: keyboard.style.keyboardBackgroundColor;
+        }
+    }
+
+    Component {
+        id: keyboardBackgroundNumeric
+        Rectangle {
+            color: keyboard.style.keyboardBackgroundColor;
+            anchors.fill: parent
+            anchors.leftMargin: (Window.width - keyboard.style.keyboardHeight) / 2
+            anchors.rightMargin: (Window.width - keyboard.style.keyboardHeight) / 2
+        }
+    }
+
+
 
     Connections {
         target: InputContext
@@ -57,6 +79,14 @@ InputPanel {
             else {
                 // this is a persistent property, so it needs to be explicitly reset
                 VirtualKeyboardSettings.inputMethodHints = Qt.ImhNone;
+            }
+
+            // reduce the numeric keyboard left-right margins by making its background transparent
+            if (hints & Qt.ImhDialableCharactersOnly) {
+                keyboard.style.keyboardBackground = keyboardBackgroundNumeric;
+            }
+            else {
+                keyboard.style.keyboardBackground = keyboardBackgroundDefault;
             }
         }
     }
