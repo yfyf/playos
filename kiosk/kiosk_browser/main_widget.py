@@ -130,9 +130,13 @@ class MainWidget(QtWidgets.QWidget):
     # Move the virtual keyboard to top or bottom of screen depending on where
     # the text input cursor is currently and resize the widget holding it.
     #
-    # Note: Manually controlling the widget size with visibleWidth and
+    # Note 1: Manually controlling the widget size with visibleWidth and
     # visibleHeight, because there are strange race conditions which lead to
     # _kbdWidget.width()/height() == 0.
+    #
+    # Note 2: cursorRectangle seems to be updated later than isVisible becomes
+    # True, therefore the keyboard visibly jumps from bottom to the top. Some
+    # form of debouncing could be used here to avoid it?
     def _positionKbdWidget(self):
         if not self._input_method.isVisible():
             self._kbdWidget.resize(QtCore.QSize(0, 0))
@@ -190,6 +194,7 @@ class MainWidget(QtWidgets.QWidget):
 
     def eventFilter(self, source, event):
         # Hide virtual keyboard with Escape key
+        # TODO: Play still receives the Escape key causing an exit from Play Settings
         if event.type() == QtCore.QEvent.Type.ShortcutOverride:
             if event.key() == QtCore.Qt.Key.Key_Escape:
                 if self._input_method.isVisible():
