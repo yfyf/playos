@@ -8,18 +8,15 @@ from PyQt6.QtWidgets import QApplication
 
 from kiosk_browser import browser_widget, captive_portal, dialogable_widget, proxy as proxy_module
 
-
 class KbdWidget(QQuickWidget):
     def visibleHeight(self):
-        # TODO: read the ratio from QtQuick.VirtualKeyboard.Styles
+        # Hack: hard-coded keyboardDesignHeight / keyboardDesignWidth values
+        # from qtvirtualkeyboard's default/style.qml
+        # Would be better to somehow read them from `QtQuick.VirtualKeyboard.Styles`
         return round(self.visibleWidth * 800 / 2560)
 
-    # TODO: pass parent widget as setContextProperty and just read
-    # these properties from QML?
     def setVisibleWidth(self, width):
         self.visibleWidth = width
-
-        self.rootObject().setProperty("visibleWidth", width)
 
     # The QQuickWidget holding the virtual keyboard is sized explicitly w.r.t.
     # the parent widget/window and the positioning is handled by the parent
@@ -42,20 +39,6 @@ class KbdWidget(QQuickWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setClearColor(Qt.GlobalColor.transparent)
 
-    # TODO: this can use QQuickWidget.status to detect error early
-    def ensureRootObjectInitialized(self):
-        retries = 3
-        while retries > 0:
-            if self.rootObject() is None:
-                retries -= 1
-                logging.info("Waiting for KbdWidget QML to initialize...")
-                time.sleep(1)
-            else:
-                logging.info("KbdWidget initialized!")
-                return
-        raise RuntimeError("Failed to initialize KbdWidget QML")
-
-
     def __init__(self):
         super(KbdWidget, self).__init__()
 
@@ -64,17 +47,16 @@ class KbdWidget(QQuickWidget):
             logging.info(f"About to load widget from {f}")
             widget_qml = QUrl.fromLocalFile(str(f))
             self.setSource(widget_qml)
-
-        # TODO: is this paranoia?
-        self.ensureRootObjectInitialized()
+            if self.status() == QQuickWidget.Status.Error:
+                raise RuntimeError(f"Failed to initialize inputpanel.qml: {self.errors()}")
 
         #self._make_transparent()
 
-        self.visibleWidth = 0
-        # TODO: is this sufficient to enable mouse-click-usage?
-        #self.setAttribute(Qt.WidgetAttribute.WA_AcceptTouchEvents)
+        self.setAttribute(Qt.WidgetAttribute.WA_AcceptTouchEvents)
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
+        self.visibleWidth = 0
+        # The alternative ResizeMode.SizeViewToRootObject approach would be more
         self.setResizeMode(QQuickWidget.ResizeMode.SizeRootObjectToView);
 
 
@@ -132,10 +114,9 @@ class MainWidget(QtWidgets.QWidget):
         self._kbdWidget.setParent(self)
 
         self._input_method = QApplication.inputMethod()
-        # Note 1: for some reason inputItemClipRectangle is always an empty QRect,
-        # but cursor position is returned correctly, so we use that.
-        # Note 2: The interleaving of cursorRectangleChanged and visibleChanged events
-        # depends on the input field focus sequence, so we simply respond to both
+
+        # Note: The interleaving of cursorRectangleChanged and visibleChanged events
+        # seems to depend on the input field focus sequence, so we simply respond to both
         self._input_method.cursorRectangleChanged.connect(self._positionKbdWidget)
         self._input_method.visibleChanged.connect(self._positionKbdWidget)
         self._positionKbdWidget()
@@ -147,11 +128,11 @@ class MainWidget(QtWidgets.QWidget):
         self.installEventFilter(self)
 
     # Move the virtual keyboard to top or bottom of screen depending on where
-    # the text input cursor is currently
-    # Note 1: Using the pre-computed visibleWidth and visibleHeight instead of
-    # there are strange race conditions due to SizeViewToRootObject that cause
-    # invalid _kbdWidget.width()/height()
-    # Note 2: can be extended to move keyboard left/right
+    # the text input cursor is currently and resize the widget holding it.
+    #
+    # Note: Manually controlling the widget size with visibleWidth and
+    # visibleHeight, because there are strange race conditions which lead to
+    # _kbdWidget.width()/height() == 0.
     def _positionKbdWidget(self):
         if not self._input_method.isVisible():
             self._kbdWidget.resize(QtCore.QSize(0, 0))
@@ -159,6 +140,7 @@ class MainWidget(QtWidgets.QWidget):
 
         cursorTop = self._input_method.cursorRectangle().top()
 
+        # Note: could also shift left/right using cursorRectangle().left() here
         kbdX = round((self.width() - self._kbdWidget.visibleWidth) / 2)
 
         if cursorTop > (self.height() / 2):
@@ -168,9 +150,8 @@ class MainWidget(QtWidgets.QWidget):
             # move to bottom
             kbdY = round(self.height() - self._kbdWidget.visibleHeight())
 
-        self._kbdWidget.resize(QtCore.QSize(round(self._kbdWidget.visibleWidth), round(self._kbdWidget.visibleHeight())))
         self._kbdWidget.move(QPoint(kbdX, kbdY))
-        self._input_method.show()
+        self._kbdWidget.resize(QtCore.QSize(round(self._kbdWidget.visibleWidth), round(self._kbdWidget.visibleHeight())))
 
 
     def closeEvent(self, event):
