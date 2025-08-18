@@ -3,9 +3,9 @@
 let
 
   nixpkgs = builtins.fetchTarball {
-    # release-25.05
-    url = "https://github.com/NixOS/nixpkgs/archive/13e8d35b7d6028b7198f8186bc0347c6abaa2701.tar.gz";
-    sha256 = "0nqbvgmm7pbpyd8ihg2bi62pxihj8r673bc9ll4qhi6xwlfqac5q";
+    # staging-next-24.11 2025-01-06
+    url = "https://github.com/NixOS/nixpkgs/archive/fe7eff0b925b09b9e03031b0321486a4e923a649.tar.gz";
+    sha256 = "1vrjmfs4acj4s7iry9jfygbk1q6smjbj552kx05bnr371wym0ypb";
   };
 
   overlay =
