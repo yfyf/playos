@@ -10,5 +10,6 @@ super.connman.overrideAttrs (old: {
     };
     patches = [
       ./create-libppp-compat.h.patch
+      ./service.c.patch
     ];
 })

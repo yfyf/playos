@@ -1,0 +1,38 @@
+diff --git i/src/service.c w/src/service.c
+index 06d02322..7d5a39db 100644
+--- i/src/service.c
++++ w/src/service.c
+@@ -983,6 +983,18 @@ static bool is_idle(enum connman_service_state state)
+ 	return false;
+ }
+ 
++static bool is_ipv4ll(const struct connman_service *service)
++{
++	enum connman_ipconfig_method method4;
++
++	if (!service || !service->ipconfig_ipv4)
++		return false;
++
++	method4 = __connman_ipconfig_get_method(service->ipconfig_ipv4);
++
++	return (method4 == CONNMAN_IPCONFIG_METHOD_AUTO);
++}
++
+ static int nameservers_changed_cb(void *user_data)
+ {
+ 	struct connman_service *service = user_data;
+@@ -5416,6 +5428,14 @@ static gint service_compare(gconstpointer a, gconstpointer b)
+ 			return 1;
+ 	}
+ 
++	/* Prefer configured IPv4 address over auto/link-local IP. */
++	bool a_is_link_local = is_ipv4ll(service_a);
++	bool b_is_link_local = is_ipv4ll(service_b);
++	if (a_connected && !a_is_link_local && b_is_link_local)
++		return -1;
++	if (a_is_link_local && b_connected && !b_is_link_local)
++		return 1;
++
+ 	if (service_a->favorite && !service_b->favorite)
+ 		return -1;
+ 
