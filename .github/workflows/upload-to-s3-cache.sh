@@ -4,7 +4,7 @@ set -f # disable globbing
 export IFS=' '
 
 export S3_BUCKET=${S3_BUCKET:-dividat-ci-nix-cache}
-export S3_BUCKET_PARAMS=${S3_BUCKET_PARAMS:-compression=zstd&profile=nixcache&region=eu-central-1}
+export S3_BUCKET_PARAMS=${S3_BUCKET_PARAMS:-compression=zstd&profile=nixcache&region=weur&endpoint=https://e33b015ef8f4f7458f7683a5695d37ec.r2.cloudflarestorage.com/}
 # see https://github.com/NixOS/nix/issues/4902
 export PATH=$PATH:/nix/var/nix/profiles/default/bin
 
