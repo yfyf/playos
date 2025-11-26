@@ -1,6 +1,10 @@
 name: "Prepare nix build environment"
 
 inputs:
+  NIX_BUILD_DIR:
+    description: Alternative build-dir for nix.conf
+    required: false
+
   NIX_CACHE_ACCOUNT_ID:
     description: S3 (cloudflare) account ID
     required: false
@@ -97,3 +101,4 @@ runs:
         trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= ${{ inputs.NIX_STORE_PUBLIC_KEY }}
         ${{ inputs.NIX_CACHE_SECRET_ACCESS_KEY && format('post-build-hook = {0}/.github/workflows/upload-to-s3-cache.sh', github.workspace) || '' }}
         ${{ inputs.NIX_BINARY_CACHE_PRIVATE_KEY && format('secret-key-files = {0}', inputs.NIX_STORE_PRIVATE_KEY_FILE) || '' }}
+        ${{ inputs.NIX_BUILD_DIR && format('build-dir = {0}', inputs.NIX_BUILD_DIR) || '' }}
