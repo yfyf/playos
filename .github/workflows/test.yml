@@ -89,7 +89,7 @@ jobs:
     - uses: actions/checkout@v4
     - uses: ./.github/actions/prep-build-env
       with:
-        NIX_BUILD_DIR: "/var/tmp/nix-build"
+        NIX_BUILD_DIR: "/nix/var/nix/builds"
         NIX_CACHE_ACCOUNT_ID: ${{ secrets.NIX_CACHE_ACCOUNT_ID }}
         NIX_CACHE_ACCESS_KEY_ID: ${{ secrets.NIX_CACHE_ACCESS_KEY_ID }}
         NIX_CACHE_SECRET_ACCESS_KEY: ${{ secrets.NIX_CACHE_SECRET_ACCESS_KEY }}
