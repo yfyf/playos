@@ -1,5 +1,6 @@
 {
     pkgs, qemu, disk, overlayPath, safeProductName, updateUrl,
+    version,
     legacyMode ? false, # disable ext4 compatibility configuration, this mode is
                         # enabled in proxy-and-update-legacy.nix
     ...
@@ -52,6 +53,15 @@ let
    nextVersionBundle = pkgs.callPackage (playosRoot + "/rauc-bundle/default.nix") {
     version  = nextVersion;
     systemImage = minimalTestSystem;
+
+    versionsRequiringCompatScript = [
+        "1.0.0" # a second version just to check array / looping works
+
+        (if legacyMode then
+            version # mark our own version as legacy
+        else
+            "1.0.1") # 1.0.1 is non-existant
+    ];
    };
 in
 pkgs.testers.runNixOSTest {
@@ -253,7 +263,8 @@ pkgs.testers.runNixOSTest {
 
 
     with TestCase("RAUC post-install hook ran and performed compatibility fixes") as t:
-        wait_for_logs(playos, "Running post-install system compatibility fixes", unit="rauc.service")
+        wait_for_logs(playos, "Checking if host system version requires compatibility fixes", unit="rauc.service")
+        wait_for_logs(playos, "Detected host system version as ${version}", unit="rauc.service")
 
         if is_legacy_mode:
             wait_for_logs(playos, f"Removing {bad_ext4_option} from {target_disk}", unit="rauc.service")

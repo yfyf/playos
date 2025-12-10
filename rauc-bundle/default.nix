@@ -6,6 +6,7 @@
 , systemImage
 , closureInfo
 , pkgs
+, versionsRequiringCompatScript ? [ "2025.3.0" "2025.3.1" "2025.3.2" ]
 }:
 
 let
@@ -24,9 +25,43 @@ let
         exit 1
     fi
 
-    BAD_EXT4_OPTION=metadata_csum_seed
+    echo "== Checking if host system version requires compatibility fixes"
+
+    echo "RAUC_SLOT_NAME: $RAUC_SLOT_NAME"
+
+    # RAUC_CURRENT_BOOTNAME is not provided in this phase, so determine manually
+    booted_slot=""
+    if [[ $RAUC_SLOT_NAME == system.a ]]; then
+        booted_slot="system.b"
+    elif [[ $RAUC_SLOT_NAME == system.b ]]; then
+        booted_slot="system.a"
+    else
+        echo "Invalid RAUC_SLOT_NAME: $RAUC_SLOT_NAME"
+        exit 1
+    fi
+
+    booted_slot_version=$(grep -A10 "\[slot.$booted_slot\]" /boot/status.ini | grep -m 1 "bundle.version=" | cut -f2 -d'=')
+
+    echo "Detected host system version as $booted_slot_version"
+
+    requires_compat=0
+
+    ${pkgs.lib.strings.toShellVar "compatVersions"  versionsRequiringCompatScript}
+    for ver in "''${!compatVersions[@]}"; do
+        if [[ $booted_slot_version == "$ver"* ]]; then
+            requires_compat=1
+            break
+        fi
+    done
+
+    if [[ requires_compat -eq 0 ]]; then
+        echo "Host system does not require compatibility fixes, exiting."
+        exit 0
+    fi
 
     echo "== Running post-install system compatibility fixes"
+
+    BAD_EXT4_OPTION=metadata_csum_seed
 
     echo "RAUC_SLOT_DEVICE: $RAUC_SLOT_DEVICE"
     echo "RAUC_SLOT_MOUNT_POINT: $RAUC_SLOT_MOUNT_POINT"
