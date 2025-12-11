@@ -253,7 +253,13 @@ def install_system(partitionPath, label):
     """
 
     # Create filesystem
-    subprocess.run(['mkfs.ext4', '-F', '-L', label, partitionPath], check=True)
+    subprocess.run(['mkfs.ext4',
+                    # Disable ext4 features that are not supported by older GRUB versions,
+                    # used by in PlayOS installations up to and including version 2023.2.0.
+                    #
+                    # See: https://bugs.launchpad.net/ubuntu/+source/grub2/+bug/1844012
+                    '-O', '^metadata_csum_seed,^orphan_file',
+                    '-F', '-L', label, partitionPath], check=True)
 
     # Mount system partition
     os.makedirs('/mnt/system', exist_ok=True)

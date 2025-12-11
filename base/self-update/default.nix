@@ -33,6 +33,11 @@ in
     };
 
     environment.etc."rauc/system.conf" = {
+      # extra-mkfs-opts opts are used disable ext4 features that are not
+      # supported by older GRUB versions, used by in PlayOS installations up to
+      # and including version 2023.2.0.
+      #
+      # See: https://bugs.launchpad.net/ubuntu/+source/grub2/+bug/1844012
       text = ''
         [system]
         compatible=dividat-play-computer
@@ -47,11 +52,13 @@ in
         device=/dev/disk/by-label/system.a
         type=ext4
         bootname=a
+        extra-mkfs-opts=-O ^metadata_csum_seed,^orphan_file
 
         [slot.system.b]
         device=/dev/disk/by-label/system.b
         type=ext4
         bootname=b
+        extra-mkfs-opts=-O ^metadata_csum_seed,^orphan_file
       '';
     };
 
