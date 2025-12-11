@@ -147,9 +147,14 @@ pkgs.testers.runNixOSTest {
     playos.start(allow_reboot=True)
     sidekick.start()
 
+    with TestCase("Installer produced a disk without incompatible FS features") as t:
+        playos.wait_for_unit("local-fs.target")
+        features = playos.succeed('tune2fs -l "/dev/disk/by-label/system.a" | grep "Filesystem features"')
+        for bad_opt in ["metadata_csum_seed", "orphan_file"]:
+            t.assertNotIn(bad_opt, features, f"ext4 was formatted with {bad_opt} by install-playos")
+
     if is_legacy_mode:
         with TestPrecondition("Setup legacy mode"):
-            playos.wait_for_unit("local-fs.target")
             playos.succeed("touch /tmp/empty.conf")
             playos.succeed("mount --bind /tmp/empty.conf /etc/mke2fs.conf")
 
@@ -251,13 +256,6 @@ pkgs.testers.runNixOSTest {
         )
 
     target_disk = "/dev/disk/by-label/system.b"
-    if not is_legacy_mode:
-        with TestCase("RAUC install respected mke2fs.conf") as t:
-            features = playos.succeed(
-                f'tune2fs -l "{target_disk}" | grep "Filesystem features"')
-            t.assertNotIn(bad_ext4_option, features,
-                          f"ext4 was formatted with {bad_ext4_option}")
-
 
     with TestCase("RAUC post-install hook ran and performed compatibility fixes") as t:
         wait_for_logs(playos, "Checking if host system version requires compatibility fixes", unit="rauc.service")
@@ -266,8 +264,15 @@ pkgs.testers.runNixOSTest {
         if is_legacy_mode:
             wait_for_logs(playos, f"Removing {bad_ext4_option} from {target_disk}", unit="rauc.service")
             wait_for_logs(playos, f"Re-mounting {target_disk}", unit="rauc.service")
-            features = playos.succeed(f'tune2fs -l "{target_disk}" | grep "Filesystem features"')
-            t.assertNotIn(bad_ext4_option, features, f"ext4 was formatted with {bad_ext4_option}")
+        else:
+            wait_for_logs(playos, "Host system does not require compatibility fixes", unit="rauc.service")
+
+
+    with TestCase("RAUC install produced a compatible filesystem") as t:
+        features = playos.succeed(
+            f'tune2fs -l "{target_disk}" | grep "Filesystem features"')
+        t.assertNotIn(bad_ext4_option, features,
+                      f"ext4 was formatted with {bad_ext4_option}")
 
 
     with TestCase("System boots into the new bundle") as t:
