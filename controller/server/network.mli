@@ -16,4 +16,8 @@ module Interface : sig
   val to_json : t -> Ezjsonm.value
 
   val get_all : unit -> t list Lwt.t
+
+  val is_wifi : t -> bool
+
+  val is_ethernet : t -> bool
 end
