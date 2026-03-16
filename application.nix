@@ -338,7 +338,8 @@ rec {
 
       playos.remoteMaintenance = {
         enable = true;
-        network = "a09acf02330ccc60";
+        jumpHostAddr = "log.dividat.com";
+        jumpHostPort = 443;
         authorizedKeys = [
           "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDUOwaIpDOHaADuJaS6+bSsEJDvmzRfdkhi8k/infDZimdbSRQvSdbRiRJlPPAeETRaKH8z5eOCJPYLSb3+EHn7oQFsUD6c5Gg+LQAahB/lhja7RoDCPH6/hHaOKYJny5lDfJ+KVSn3fNFiJ0mFJRIjGcoUeI95Rw1PHZJae8ZOapU336Uyy8hB84lvcaFmjzMEIyDkvSxpTrD+RpugG3XJhQE24a6t7fN9z3P6CfprVyFVHA3dkmxAvcYseeXA6TBfIGUbiC3wN1o7GoAgnsiVpwq9q4Ye3jMoRvB3Iw05rvcO/m5WT3JmCAWgeIM1yvWM3Pxc05E7g1jXRaygb0VVk8QendNZt+jlwVVU5N2H+LJ+vwyt+6PCFRGjPkLHjFwpoiLc7S6gHFQH4PcynyjOyAIKvBekn3LxV9hGkadVx7PwXX3C4Eqj4MGaVa095eVdtxZbSdwtUiOclXgA3G3O6Jen/fZDd2hMbX2mXgnGtn9LQjIz8RWFnyg6EU4ZfVhDsZcp8kVznQK8ibax2I++leJfVr95JsCPvVSIwNfxPA1/BDggxiwCSKUq/EvQyZ3/0pHJc3Lfca/1aTb0Hn1q5RPXjUGLlOOnG/yfD/FV1rnF49TgNIESF3tZ852Ba9sbcJohCgSCRBBeAiE7TXM5K84/V1HXlQlmA8JIJfyUlQ== openpgp:0x01C16138"
           "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDy1Oevsq3OEHyhOTXc7RwsIMEuqANnrHPwpI3oe+7ySnBtIWNJsK0tbrhW+qVOplnCMyFYHOHGxTesvWf3s+3mlIazCEpN3tpWO3rv+VwuV53tXovqRW8TyddEcVcjSVWcNwgVkFXeSgKvNLhOWf5u8K3JFcZjnSBdjlVJhm6haS7QUn69ZPZdHNK2sK/zwFPLwKo5ms59oBGVSXRWBMlzVsm8WMjiW53SDrGHuZ10iKc3volKdNmxuYfu5/OcG6bFSgtrUwLs/WbPhIQeXS2VDEd+wHm12ymzCL9zdgRl1DE31f+vvxs9wQnFJhijz6tVMr5/Ieqfkgxenvy3UqwEUAlyHm+0E3SjN9M/d1P9AQ5cSEHobOsEmGWxavlFGYkty0OZmaD9GtWvPXhPLevDcrwcxVmtxEhPYidQDFOXe2R5NhvEqFe4BUenb4tijJ54/tciOnLQa4+qJu6+35+7ptpEsW+U0WO1OokkBgfHLiqDPdmao8tAnCFrAGCtYINVRbdDGhMYaVXk/jYjyaw4jJ36lSVTsRhsWEz6JvAcy8LsLT3VYIlnyvdBPpT52ywpuFOE7+1ozImSFs68pHPgm1NbEIh8KobXTyGMzsw1rGRrULYX3Npx5yhA9TNU421+Bhy1afLYyBwoGIbabUbKx9psGULvGGpitdYTFFm8hQ== openpgp:0x25210E82"
