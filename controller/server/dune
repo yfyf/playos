@@ -6,6 +6,7 @@
  (modules
   server
   info
+  diagnostics
   gui
   health
   info_page

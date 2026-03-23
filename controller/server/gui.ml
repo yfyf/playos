@@ -597,6 +597,7 @@ let routes ~systemd ~health_s ~update_s ~rauc ~connman app =
   |> middleware error_handling
   |> get "/" (fun _ -> "/info" |> Uri.of_string |> redirect')
   |> InfoGui.build
+  |> Diagnostics.build
   |> NetworkGui.build ~connman
   |> LocalizationGui.build
   |> StatusGui.build ~systemd ~health_s ~update_s ~rauc
