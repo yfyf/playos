@@ -209,43 +209,41 @@ module LocalizationGui = struct
     |> post "/localization/scaling" set_scaling
 end
 
+(* Get interface annotations for all network interfaces.
+   Used by both NetworkGui and Diagnostics. *)
+let get_interface_annotations () =
+  let annotated_service_types =
+    get_env_list "PLAYOS_ANNOTATE_DISCOVERED_SERVICES"
+  in
+  let%lwt annotated_services =
+    annotated_service_types
+    |> Lwt_list.map_p Avahi.Service.get_service_type
+    >|= List.concat
+  in
+  let%lwt interfaces = Network.Interface.get_all () in
+  interfaces
+  |> List.map (fun (interface : Network.Interface.t) ->
+         ( interface.name
+         , List.filter_map
+             (fun (s : Avahi.Service.t) ->
+               if s.interface = interface.name then Some s.service_name
+               else None
+             )
+             annotated_services
+           |> List.sort_uniq String.compare
+         )
+     )
+  |> return
+
 (** Network configuration GUI *)
 module NetworkGui = struct
   open Connman
-
-  (* Annotate network interfaces with instance names of DNS-SD services.
-
-     Browses for DNS-SD services with the given service types and groups them
-     by network interface.
-  *)
-  let interface_annotations interfaces =
-    let annotated_service_types =
-      get_env_list "PLAYOS_ANNOTATE_DISCOVERED_SERVICES"
-    in
-    let%lwt annotated_services =
-      annotated_service_types
-      |> Lwt_list.map_p Avahi.Service.get_service_type
-      >|= List.concat
-    in
-    interfaces
-    |> List.map (fun (interface : Network.Interface.t) ->
-           ( interface.name
-           , List.filter_map
-               (fun (s : Avahi.Service.t) ->
-                 if s.interface = interface.name then Some s.service_name
-                 else None
-               )
-               annotated_services
-             |> List.sort_uniq String.compare
-           )
-       )
-    |> return
 
   let overview ~(connman : Manager.t) req =
     let%lwt all_services = Manager.get_services connman in
     let%lwt proxy = Manager.get_default_proxy connman in
     let%lwt interfaces = Network.Interface.get_all () in
-    let%lwt interface_annotations = interface_annotations interfaces in
+    let%lwt interface_annotations = get_interface_annotations () in
     let pp_proxy p =
       let uri =
         p |> Service.Proxy.to_uri ~include_userinfo:false |> Uri.to_string
@@ -597,7 +595,7 @@ let routes ~systemd ~health_s ~update_s ~rauc ~connman app =
   |> middleware error_handling
   |> get "/" (fun _ -> "/info" |> Uri.of_string |> redirect')
   |> InfoGui.build
-  |> Diagnostics.build
+  |> Diagnostics.build ~get_interface_annotations
   |> NetworkGui.build ~connman
   |> LocalizationGui.build
   |> StatusGui.build ~systemd ~health_s ~update_s ~rauc

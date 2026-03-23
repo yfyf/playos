@@ -14,6 +14,7 @@ type network_stats = {
 type interface_info = {
   status : string;
   stats : network_stats;
+  annotations : string list;
 } [@@deriving protocol ~driver:(module Jsonm)]
 
 type interface_dict = (string * interface_info) list [@@deriving protocol ~driver:(module Jsonm)]
@@ -21,10 +22,10 @@ type interface_dict = (string * interface_info) list [@@deriving protocol ~drive
 let interface_dict_to_jsonm (dict : interface_dict) =
   `O (List.map (fun (k, v) -> (k, interface_info_to_jsonm v)) dict)
 
-let interface_dict_of_jsonm = function
-  | `O items ->
-      List.map (fun (k, v) -> (k, interface_info_of_jsonm v)) items
-  | _ -> failwith "Expected a JSON object"
+let interface_dict_of_jsonm _ =
+  failwith "Expected a JSON object"
+
+type interface_annotations = (string * string list) list
 
 type diagnostics_res = {
   wifi : interface_dict;
@@ -76,17 +77,22 @@ let get_status iface =
   let%lwt state = run_cmd (Printf.sprintf "cat /sys/class/net/%s/operstate 2>/dev/null" iface) in
   if state = "" then Lwt.return "unknown" else Lwt.return state
 
-let get_iface_info iface =
+let get_iface_info annotations iface =
   let%lwt stats = get_stats iface in
   let%lwt status = get_status iface in
-  Lwt.return (iface, { status; stats })
+  let iface_annotations =
+    match List.assoc_opt iface annotations with
+    | Some a -> a
+    | None -> []
+  in
+  Lwt.return (iface, { status; stats; annotations = iface_annotations })
 
-let getInfo () =
+let getInfo annotations =
   let%lwt wifi_ifaces = get_ifaces "w" in
   let%lwt eth_ifaces = get_ifaces "e" in
 
-  let%lwt wifi = Lwt_list.map_s get_iface_info wifi_ifaces in
-  let%lwt ethernet = Lwt_list.map_s get_iface_info eth_ifaces in
+  let%lwt wifi = Lwt_list.map_s (get_iface_info annotations) wifi_ifaces in
+  let%lwt ethernet = Lwt_list.map_s (get_iface_info annotations) eth_ifaces in
 
   let%lwt driver = run_cmd "systemctl show -p ActiveState --value dividat-driver" in
   let driver = if driver = "" then "unknown" else driver in
@@ -129,13 +135,14 @@ let respond_ok () =
 
 (* --- App Builder --- *)
 
-let build app =
+let build ~get_interface_annotations app =
   app
   (* Attach our new global middleware *)
   |> middleware cors_middleware
 
   |> get "/diagnostics" (fun _ ->
-         let%lwt server_info = getInfo () in
+         let%lwt interface_annotations = get_interface_annotations () in
+         let%lwt server_info = getInfo interface_annotations in
          Lwt.return (resp_json (diagnostics_res_to_jsonm server_info)))
 
   |> post "/diagnostics/wifi/on" (fun _ ->
