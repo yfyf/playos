@@ -15,6 +15,7 @@ type interface_info = {
   status : string;
   stats : network_stats;
   annotations : string list;
+  ping_rate : float option;
 } [@@deriving protocol ~driver:(module Jsonm)]
 
 type interface_dict = (string * interface_info) list [@@deriving protocol ~driver:(module Jsonm)]
@@ -32,6 +33,46 @@ type diagnostics_res = {
   ethernet : interface_dict;
   driver : string;
 } [@@deriving protocol ~driver:(module Jsonm)]
+
+(* --- Ping generate request type --- *)
+
+type ping_generate_req = {
+  interface : string;
+  rate : float option;
+} [@@deriving protocol ~driver:(module Jsonm)]
+
+(* --- Global state for ping processes --- *)
+
+let ping_processes : (string, Lwt_process.process_none * float) Hashtbl.t = Hashtbl.create 16
+
+let kill_ping_process iface =
+  match Hashtbl.find_opt ping_processes iface with
+  | Some (proc, _) ->
+      Hashtbl.remove ping_processes iface;
+      proc#kill Sys.sigterm;
+      Lwt.return_unit
+  | None -> Lwt.return_unit
+
+let start_ping_process iface rate =
+  let%lwt () = kill_ping_process iface in
+  if rate > 0.0 then begin
+    let interval = 1.0 /. rate in
+    let cmd = Printf.sprintf "ping -I %s -f -i %f -b 255.255.255.255" iface interval in
+    let proc = Lwt_process.open_process_none (Lwt_process.shell cmd) in
+    Hashtbl.replace ping_processes iface (proc, rate);
+    (* Monitor process and clean up when it dies *)
+    Lwt.async (fun () ->
+      let%lwt _ = proc#status in
+      Hashtbl.remove ping_processes iface;
+      Lwt.return_unit);
+    Lwt.return_unit
+  end else
+    Lwt.return_unit
+
+let get_ping_rate iface =
+  match Hashtbl.find_opt ping_processes iface with
+  | Some (_, rate) -> Some rate
+  | None -> None
 
 (* --- Helper functions for Linux system commands --- *)
 
@@ -85,7 +126,8 @@ let get_iface_info annotations iface =
     | Some a -> a
     | None -> []
   in
-  Lwt.return (iface, { status; stats; annotations = iface_annotations })
+  let ping_rate = get_ping_rate iface in
+  Lwt.return (iface, { status; stats; annotations = iface_annotations; ping_rate })
 
 let getInfo annotations =
   let%lwt wifi_ifaces = get_ifaces "w" in
@@ -165,3 +207,19 @@ let build ~get_interface_annotations app =
   |> post "/diagnostics/driver/off" (fun _ ->
          let%lwt _ = run_cmd_ignore "systemctl stop dividat-driver" in
          respond_ok ())
+
+  |> post "/diagnostics/ping/generate" (fun req ->
+         let%lwt body_str = Cohttp_lwt.Body.to_string req.Request.body in
+         match Ezjsonm.value_from_string body_str with
+         | `O _ as json ->
+             (match ping_generate_req_of_jsonm json with
+              | Ok req_data ->
+                  let rate = Option.value req_data.rate ~default:0.0 in
+                  let%lwt () = start_ping_process req_data.interface rate in
+                  respond_ok ()
+              | Error _ ->
+                  Lwt.return (resp_json ~code:(`Code 400) (Ezjsonm.dict [("error", Ezjsonm.string "Invalid request")])))
+         | _ ->
+             Lwt.return (resp_json ~code:(`Code 400) (Ezjsonm.dict [("error", Ezjsonm.string "Expected JSON object")]))
+         | exception _ ->
+             Lwt.return (resp_json ~code:(`Code 400) (Ezjsonm.dict [("error", Ezjsonm.string "Invalid JSON")])))
