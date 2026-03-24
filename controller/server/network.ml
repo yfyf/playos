@@ -87,11 +87,17 @@ module Interface = struct
   *)
   let get_all () =
     let command = ("ip", [| "ip"; "-j"; "link" |]) in
-    let%lwt json = Lwt_process.pread command in
-    json
-    |> Ezjsonm.from_string
-    |> Ezjsonm.value
-    |> Ezjsonm.get_list of_json
-    |> List.filter_map (fun x -> x)
-    |> return
+    let process = Lwt_process.open_process_in command in
+    let%lwt json = Lwt_io.read process#stdout in
+    let%lwt status = process#status in
+    match status with
+    | Unix.WEXITED 0 ->
+      json
+      |> Ezjsonm.from_string
+      |> Ezjsonm.value
+      |> Ezjsonm.get_list of_json
+      |> List.filter_map (fun x -> x)
+      |> return
+    | _ ->
+      Lwt.fail_with "Failed to run 'ip -j link' command"
 end
