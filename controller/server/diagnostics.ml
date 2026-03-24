@@ -51,20 +51,24 @@ let kill_ping_process iface =
   | Some (proc, _) ->
       Hashtbl.remove ping_processes iface;
       proc#kill Sys.sigterm;
+      let%lwt _ = proc#status in
       Lwt.return_unit
   | None -> Lwt.return_unit
 
 let start_ping_process iface rate =
   let%lwt () = kill_ping_process iface in
   if rate > 0.0 then begin
-    let interval = 1.0 /. rate in
-    let cmd = Printf.sprintf "ping -I %s -f -i %f -b 255.255.255.255" iface interval in
-    let proc = Lwt_process.open_process_none (Lwt_process.shell cmd) in
+    let interval = Printf.sprintf "%f" (1.0 /. rate) in
+    let proc = Lwt_process.open_process_none
+      ("ping", [| "ping"; "-I"; iface; "-f"; "-i"; interval; "-b"; "255.255.255.255" |]) in
     Hashtbl.replace ping_processes iface (proc, rate);
     (* Monitor process and clean up when it dies *)
     Lwt.async (fun () ->
       let%lwt _ = proc#status in
-      Hashtbl.remove ping_processes iface;
+      (* Only remove if the entry still refers to this process *)
+      (match Hashtbl.find_opt ping_processes iface with
+       | Some (p, _) when p == proc -> Hashtbl.remove ping_processes iface
+       | _ -> ());
       Lwt.return_unit);
     Lwt.return_unit
   end else
