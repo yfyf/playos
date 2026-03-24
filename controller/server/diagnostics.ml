@@ -81,7 +81,7 @@ let start_usb_monitor () =
       "-e"; "usb.urb_len";
       "-E"; "separator=,"
     |]) in
-    let proc = Lwt_process.open_process_in cmd in
+    let proc = Lwt_process.open_process_in ~stderr:`Dev_null cmd in
     let rec read_loop () =
       Lwt.catch
         (fun () ->
@@ -129,7 +129,7 @@ let start_ping_process iface rate =
   let%lwt () = kill_ping_process iface in
   if rate > 0.0 then begin
     let interval = Printf.sprintf "%f" (1.0 /. rate) in
-    let proc = Lwt_process.open_process_none
+    let proc = Lwt_process.open_process_none ~stdout:`Dev_null ~stderr:`Dev_null
       ("ping", [| "ping"; "-I"; iface; "-f"; "-i"; interval; "-b"; "255.255.255.255" |]) in
     Hashtbl.replace ping_processes iface (proc, rate);
     (* Monitor process and clean up when it dies *)
