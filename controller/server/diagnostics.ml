@@ -32,6 +32,7 @@ type diagnostics_res = {
   wifi : interface_dict;
   ethernet : interface_dict;
   driver : string;
+  rfid : string;
 } [@@deriving protocol ~driver:(module Jsonm)]
 
 (* --- Ping generate request type --- *)
@@ -139,7 +140,10 @@ let getInfo annotations =
   let%lwt driver = run_cmd "systemctl show -p ActiveState --value dividat-driver" in
   let driver = if driver = "" then "unknown" else driver in
 
-  Lwt.return { wifi; ethernet; driver }
+  let%lwt rfid = run_cmd "systemctl show -p ActiveState --value pcscd.socket" in
+  let rfid = if rfid = "" then "unknown" else rfid in
+
+  Lwt.return { wifi; ethernet; driver; rfid }
 
 (* --- Global CORS Middleware --- *)
 
@@ -206,6 +210,13 @@ let build ~get_interface_annotations app =
          respond_ok ())
   |> post "/diagnostics/driver/off" (fun _ ->
          let%lwt _ = run_cmd_ignore "systemctl stop dividat-driver" in
+         respond_ok ())
+
+  |> post "/diagnostics/rfid/on" (fun _ ->
+         let%lwt _ = run_cmd_ignore "systemctl start pcscd.socket pcscd.service" in
+         respond_ok ())
+  |> post "/diagnostics/rfid/off" (fun _ ->
+         let%lwt _ = run_cmd_ignore "systemctl stop pcscd.service pcscd.socket" in
          respond_ok ())
 
   |> post "/diagnostics/ping/generate" (fun req ->
