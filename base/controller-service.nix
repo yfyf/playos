@@ -24,6 +24,8 @@ with lib;
       }
     ];
 
+    boot.kernelModules = [ "usbmon" ];
+
     services.avahi.enable = mkIf hasAnnotatedServices true;
 
     # Use the persistent partition for storing controller state only to avoid

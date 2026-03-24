@@ -28,11 +28,27 @@ let interface_dict_of_jsonm _ =
 
 type interface_annotations = (string * string list) list
 
+(* --- USB stats types --- *)
+
+type usb_device_stats = {
+  in_bytes : int;
+  out_bytes : int;
+} [@@deriving protocol ~driver:(module Jsonm)]
+
+type usb_dict = (string * usb_device_stats) list [@@deriving protocol ~driver:(module Jsonm)]
+
+let usb_dict_to_jsonm (dict : usb_dict) =
+  `O (List.map (fun (k, v) -> (k, usb_device_stats_to_jsonm v)) dict)
+
+let usb_dict_of_jsonm _ =
+  failwith "Expected a JSON object"
+
 type diagnostics_res = {
   wifi : interface_dict;
   ethernet : interface_dict;
   driver : string;
   rfid : string;
+  usb : usb_dict;
 } [@@deriving protocol ~driver:(module Jsonm)]
 
 (* --- Ping generate request type --- *)
@@ -45,6 +61,60 @@ type ping_generate_req = {
 (* --- Global state for ping processes --- *)
 
 let ping_processes : (string, Lwt_process.process_none * float) Hashtbl.t = Hashtbl.create 16
+
+(* --- Global state for USB traffic monitoring --- *)
+
+(* Key is "bus_id.device_address", value is (in_bytes, out_bytes) *)
+let usb_stats_table : (string, int * int) Hashtbl.t = Hashtbl.create 16
+let usb_monitor_started = ref false
+
+let start_usb_monitor () =
+  if not !usb_monitor_started then begin
+    usb_monitor_started := true;
+    let cmd = ("tshark", [|
+      "tshark"; "-i"; "usbmon0";
+      "-Y"; "usb.urb_len > 0 and usb.urb_type == URB_COMPLETE";
+      "-T"; "fields";
+      "-e"; "usb.bus_id";
+      "-e"; "usb.device_address";
+      "-e"; "usb.endpoint_address.direction";
+      "-e"; "usb.urb_len";
+      "-E"; "separator=,"
+    |]) in
+    let proc = Lwt_process.open_process_in cmd in
+    let rec read_loop () =
+      Lwt.catch
+        (fun () ->
+          match%lwt Lwt_io.read_line_opt proc#stdout with
+          | None -> Lwt.return_unit
+          | Some line ->
+              (* Parse CSV: bus_id,device_address,direction,urb_len *)
+              (match String.split_on_char ',' line with
+               | [bus_id; device_addr; direction; urb_len] ->
+                   let key = "bus" ^ bus_id ^ ".dev" ^ device_addr in
+                   let len = int_of_string_opt urb_len |> Option.value ~default:0 in
+                   let (in_bytes, out_bytes) =
+                     match Hashtbl.find_opt usb_stats_table key with
+                     | Some (i, o) -> (i, o)
+                     | None -> (0, 0)
+                   in
+                   (* direction "1" = IN (device to host), "0" = OUT (host to device) *)
+                   let (new_in, new_out) =
+                     if direction = "1" then (in_bytes + len, out_bytes)
+                     else (in_bytes, out_bytes + len)
+                   in
+                   Hashtbl.replace usb_stats_table key (new_in, new_out)
+               | _ -> ());
+              read_loop ())
+        (fun _ -> Lwt.return_unit)
+    in
+    Lwt.async read_loop
+  end
+
+let get_usb_stats () =
+  Hashtbl.fold (fun key (in_bytes, out_bytes) acc ->
+    (key, { in_bytes; out_bytes }) :: acc
+  ) usb_stats_table []
 
 let kill_ping_process iface =
   match Hashtbl.find_opt ping_processes iface with
@@ -147,7 +217,9 @@ let getInfo annotations =
   let%lwt rfid = run_cmd "systemctl show -p ActiveState --value pcscd.socket" in
   let rfid = if rfid = "" then "unknown" else rfid in
 
-  Lwt.return { wifi; ethernet; driver; rfid }
+  let usb = get_usb_stats () in
+
+  Lwt.return { wifi; ethernet; driver; rfid; usb }
 
 (* --- Global CORS Middleware --- *)
 
@@ -186,6 +258,9 @@ let respond_ok () =
 (* --- App Builder --- *)
 
 let build ~get_interface_annotations app =
+  (* Start USB traffic monitoring *)
+  start_usb_monitor ();
+
   app
   (* Attach our new global middleware *)
   |> middleware cors_middleware
