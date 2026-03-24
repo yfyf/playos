@@ -86,7 +86,7 @@ module Interface = struct
 
   *)
   let get_all () =
-    let command = ("/run/current-system/sw/bin/ip", [| "ip"; "-j"; "link" |]) in
+    let command = ("ip", [| "ip"; "-j"; "link" |]) in
     let%lwt json = Lwt_process.pread command in
     json
     |> Ezjsonm.from_string
