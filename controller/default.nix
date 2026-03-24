@@ -38,7 +38,7 @@ ocamlPackages.buildDunePackage rec {
   postFixup = ''
     for prog in "$out"/bin/*; do
         wrapProgram $prog \
-            --prefix PATH ":" ${lib.makeBinPath [ curl iproute2 ]}
+            --prefix PATH ":" ${lib.makeBinPath [ curl iproute2 iputils ]}
     done
   '';
 
