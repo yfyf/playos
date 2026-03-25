@@ -258,9 +258,11 @@ rec {
         extraOptions = [ "start-hidden" ];
       };
 
+      playos.networking.watchdog = false;
+
       # Firewall configuration
       networking.firewall = {
-        enable = true;
+        enable = false;
 
         # Allow use of TFTP client for Senso firmware update
         connectionTrackingModules = [ "tftp" ];
