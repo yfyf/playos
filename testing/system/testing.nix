@@ -35,7 +35,6 @@
 
     # run a little bit faster for easier testing
     playos.networking.watchdog = {
-        enable = true;
         checkURLs = [ config.playos.kioskUrl ];
         maxNumFailures = 3;
         checkInterval = 10;

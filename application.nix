@@ -258,7 +258,7 @@ rec {
         extraOptions = [ "start-hidden" ];
       };
 
-      playos.networking.watchdog = false;
+      playos.networking.watchdog.enable = lib.mkForce false;
 
       # Firewall configuration
       networking.firewall = {
