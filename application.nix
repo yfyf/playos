@@ -259,6 +259,7 @@ rec {
       };
 
       playos.networking.watchdog.enable = lib.mkForce false;
+      playos.selfUpdate.enable = false;
 
       # Firewall configuration
       networking.firewall = {
