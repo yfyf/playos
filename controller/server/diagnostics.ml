@@ -9,6 +9,8 @@ type network_stats = {
   tx_packets : int;
   rx_bytes : int;
   tx_bytes : int;
+  rx_dropped : int;
+  tx_dropped : int;
 } [@@deriving protocol ~driver:(module Jsonm)]
 
 type interface_info = {
@@ -187,7 +189,9 @@ let get_stats iface =
   let%lwt tx_packets = read_sys_int (base_path ^ "tx_packets") in
   let%lwt rx_bytes = read_sys_int (base_path ^ "rx_bytes") in
   let%lwt tx_bytes = read_sys_int (base_path ^ "tx_bytes") in
-  Lwt.return { rx_packets; tx_packets; rx_bytes; tx_bytes }
+  let%lwt rx_dropped = read_sys_int (base_path ^ "rx_dropped") in
+  let%lwt tx_dropped = read_sys_int (base_path ^ "tx_dropped") in
+  Lwt.return { rx_packets; tx_packets; rx_bytes; tx_bytes; rx_dropped; tx_dropped }
 
 let get_status iface =
   let%lwt state = run_cmd (Printf.sprintf "cat /sys/class/net/%s/operstate 2>/dev/null" iface) in
