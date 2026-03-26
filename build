@@ -83,6 +83,22 @@ elif [ "$TARGET" == "develop" ]; then
   echo
   echo "Run ./result/bin/deploy-update to deploy."
 
+elif [ "$TARGET" == "emc" ]; then
+
+  scripts/info-branch-commit
+  scripts/confirm-or-abort
+
+  (set -x; nix-build \
+    --arg updateCert ./pki/dummy/cert.pem \
+    --arg updateUrl https://dist.dividat.com/releases/playos/emc/ \
+    --arg deployUrl s3://dist.dividat.ch/releases/playos/emc/ \
+    --arg kioskUrl "https://shed.dividat.com/e/1BuX6YPqW/play.html"  \
+    --arg watchdogUrls '["https://dev-play.dividat.com/" "https://dev-api.dividat.com"]' \
+    --arg buildDisk false)
+
+  echo
+  echo "Run ./result/bin/deploy-update to deploy."
+
 elif [ "$TARGET" == "validation" ]; then
 
   scripts/info-branch-commit
