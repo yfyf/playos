@@ -92,7 +92,7 @@ elif [ "$TARGET" == "emc" ]; then
     --arg updateCert ./pki/dummy/cert.pem \
     --arg updateUrl https://dist.dividat.com/releases/playos/emc/ \
     --arg deployUrl s3://dist.dividat.ch/releases/playos/emc/ \
-    --arg kioskUrl "https://shed.dividat.com/e/1BuX6YPqW/play.html"  \
+    --arg kioskUrl "https://shed.dividat.com/t/emc-testing/play.html"  \
     --arg watchdogUrls '["https://dev-play.dividat.com/" "https://dev-api.dividat.com"]' \
     --arg buildDisk false)
 
