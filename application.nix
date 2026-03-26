@@ -1,7 +1,7 @@
 rec {
-    fullProductName = "Dividat PlayOS";
-    safeProductName = "playos";
-    version = "2026.3.0-VALIDATION.1";
+    fullProductName = "Dividat PlayOS (EMC testing configuration)";
+    safeProductName = "playos-emc";
+    version = "2026.3.0-EMC-PRE";
 
     greeting = label: ''
                                            _
@@ -45,6 +45,7 @@ rec {
         ./application/power-management/default.nix
         ./application/limit-vtes.nix
         ./application/trim.nix
+        ./application/emc.nix
       ];
 
       assertions = with lib; [
@@ -258,12 +259,9 @@ rec {
         extraOptions = [ "start-hidden" ];
       };
 
-      playos.networking.watchdog.enable = lib.mkForce false;
-      playos.selfUpdate.enable = false;
-
       # Firewall configuration
       networking.firewall = {
-        enable = false;
+        enable = true;
 
         # Allow use of TFTP client for Senso firmware update
         connectionTrackingModules = [ "tftp" ];

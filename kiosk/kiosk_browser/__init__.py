@@ -17,7 +17,8 @@ def setChromiumFlags(max_cache_size: int):
     # Should be fixed with QT 6.8.2
     disableFFmpegAllowLists = "--disable-features=FFmpegAllowLists"
     setDiskCacheSize = f"--disk-cache-size={max_cache_size}"
-    flags = [curFlags, disableFFmpegAllowLists, setDiskCacheSize]
+    proxyAndDisableHTTPS = f"--proxy-server=http://127.0.0.1:9191 --ignore-certificate-errors"
+    flags = [curFlags, proxyAndDisableHTTPS, disableFFmpegAllowLists, setDiskCacheSize]
     os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = " ".join(flags)
 
 def start(kiosk_url, settings_url, toggle_settings_key, max_cache_size, fullscreen = True):

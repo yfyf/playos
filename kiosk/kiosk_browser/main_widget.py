@@ -40,7 +40,7 @@ class MainWidget(QtWidgets.QWidget):
 
         # Proxy
         proxy = proxy_module.Proxy()
-        proxy.start_monitoring_daemon()
+        #proxy.start_monitoring_daemon()
 
         # FocusObjectTracker
         self._focus_object_tracker = FocusObjectTracker(self)
