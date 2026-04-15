@@ -115,6 +115,17 @@ elif [ "$TARGET" == "master" ]; then
   echo
   echo "Run ./result/bin/deploy-update to deploy."
 
+elif [ "$TARGET" == "fibo" ]; then
+
+  (set -x; nix-build \
+    --arg kioskUrl "https://lab.dividat.ch/e/5iXD-C098/play.html" \
+    --arg updateUrl https://dist.dividat.com/releases/playos/fibo/ \
+    --arg deployUrl s3://dist.dividat.ch/releases/playos/fibo/ \
+    --arg buildDisk false)
+
+  echo
+  echo "Run ./result/bin/deploy-update to deploy."
+
 elif [ "$TARGET" == "stuck" ]; then
 
   echo "Creating a stuck system that will not self-update."
