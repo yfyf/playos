@@ -116,11 +116,6 @@ let run_cmd cmd =
     )
     (fun _ -> Lwt.return "")
 
-let run_cmd_lines cmd =
-  let%lwt out = run_cmd cmd in
-  let lines = String.split_on_char '\n' out in
-  Lwt.return (List.filter (fun s -> s <> "") lines)
-
 let run_cmd_ignore cmd =
   Lwt.catch
     (fun () ->
@@ -129,9 +124,16 @@ let run_cmd_ignore cmd =
     )
     (fun _ -> Lwt.return_unit)
 
+let read_file_trimmed path =
+  try
+    let ic = open_in path in
+    Fun.protect
+      ~finally:(fun () -> close_in_noerr ic)
+      (fun () -> String.trim (input_line ic))
+  with _ -> ""
+
 let read_sys_int path =
-  let%lwt content = run_cmd (Printf.sprintf "cat %s 2>/dev/null" path) in
-  match int_of_string_opt content with
+  match int_of_string_opt (read_file_trimmed path) with
   | Some v ->
       Lwt.return v
   | None ->
@@ -140,7 +142,12 @@ let read_sys_int path =
 (* --- Network information gatherers --- *)
 
 let get_ifaces prefix =
-  run_cmd_lines (Printf.sprintf "ls /sys/class/net | grep '^%s'" prefix)
+  try
+    Sys.readdir "/sys/class/net"
+    |> Array.to_list
+    |> List.filter (String.starts_with ~prefix)
+    |> Lwt.return
+  with _ -> Lwt.return []
 
 let get_stats iface =
   let base_path = "/sys/class/net/" ^ iface ^ "/statistics/" in
@@ -154,9 +161,7 @@ let get_stats iface =
     { rx_packets; tx_packets; rx_bytes; tx_bytes; rx_dropped; tx_dropped }
 
 let get_status iface =
-  let%lwt state =
-    run_cmd (Printf.sprintf "cat /sys/class/net/%s/operstate 2>/dev/null" iface)
-  in
+  let state = read_file_trimmed ("/sys/class/net/" ^ iface ^ "/operstate") in
   if state = "" then Lwt.return "unknown" else Lwt.return state
 
 let find_iface_service services iface =
