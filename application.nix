@@ -1,7 +1,7 @@
 rec {
     fullProductName = "Dividat PlayOS (EMC testing configuration)";
     safeProductName = "playos-emc";
-    version = "2026.3.0-EMC-PRE.1";
+    version = "2026.3.0-EMC-PRE.2";
 
     greeting = label: ''
                                            _
