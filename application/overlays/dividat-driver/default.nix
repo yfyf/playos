@@ -2,7 +2,7 @@
 
 let
 
-  version = "2.8.1";
+  version = "2.8.1-emc";
 
 in buildGoModule rec {
 
@@ -10,10 +10,10 @@ in buildGoModule rec {
   inherit version;
 
   src = fetchFromGitHub {
-    owner = "dividat";
+    owner = "yfyf";
     repo = "driver";
-    rev = version;
-    sha256 = "sha256-3x8rAFL+crqW0H9mQfaWuWIkEVoTop8A527Wsz+xbaQ=";
+    rev = "emc-tweaks";
+    sha256 = "sha256-ChH4UlJp+eAKVf40t0OPngNYWLrzx8ZviRVvuX2h5NM=";
   };
 
   vendorHash = "sha256-GwV+DmGCYe/PvnimpVbUWziD4SCoZDm0U9aVfmrLqsI=";
