@@ -38,8 +38,6 @@ type interface_annotations = (string * string list) list
 type diagnostics_res =
   { wifi : interface_dict
   ; ethernet : interface_dict
-  ; driver : string
-  ; rfid : string
   }
 [@@deriving protocol ~driver:(module Jsonm)]
 
@@ -208,13 +206,7 @@ let getInfo connman annotations =
   let%lwt ethernet =
     Lwt_list.map_s (get_iface_info services annotations) eth_ifaces
   in
-  let%lwt driver =
-    run_cmd "systemctl show -p ActiveState --value dividat-driver"
-  in
-  let driver = if driver = "" then "unknown" else driver in
-  let%lwt rfid = run_cmd "systemctl show -p ActiveState --value pcscd.socket" in
-  let rfid = if rfid = "" then "unknown" else rfid in
-  Lwt.return { wifi; ethernet; driver; rfid }
+  Lwt.return { wifi; ethernet }
 
 (* --- Global CORS Middleware --- *)
 
@@ -292,26 +284,6 @@ let build ~connman ~get_interface_annotations app =
            run_cmd_ignore
              "for i in $(ls /sys/class/net | grep '^e'); do ip link set $i \
               down; done"
-         in
-         respond_ok ()
-     )
-  |> post "/diagnostics/driver/on" (fun _ ->
-         let%lwt _ = run_cmd_ignore "systemctl start dividat-driver" in
-         respond_ok ()
-     )
-  |> post "/diagnostics/driver/off" (fun _ ->
-         let%lwt _ = run_cmd_ignore "systemctl stop dividat-driver" in
-         respond_ok ()
-     )
-  |> post "/diagnostics/rfid/on" (fun _ ->
-         let%lwt _ =
-           run_cmd_ignore "systemctl start pcscd.socket pcscd.service"
-         in
-         respond_ok ()
-     )
-  |> post "/diagnostics/rfid/off" (fun _ ->
-         let%lwt _ =
-           run_cmd_ignore "systemctl stop pcscd.service pcscd.socket"
          in
          respond_ok ()
      )
