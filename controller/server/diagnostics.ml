@@ -17,6 +17,8 @@ type network_stats =
 type interface_info =
   { status : string
   ; state : Connman.Service.state option
+  ; error : string option
+  ; strength : int option
   ; stats : network_stats
   ; annotations : string list
   ; ping_rate : float option
@@ -159,17 +161,17 @@ let get_status iface =
   in
   if state = "" then Lwt.return "unknown" else Lwt.return state
 
-let get_iface_state services iface =
+let find_iface_service services iface =
   let on_iface =
     List.filter
       (fun (s : Connman.Service.t) -> s.ethernet.interface = iface)
       services
   in
   match List.find_opt Connman.Service.is_connected on_iface with
-  | Some s ->
-      Some s.state
+  | Some _ as s ->
+      s
   | None ->
-      List.nth_opt on_iface 0 |> Option.map (fun (s : Connman.Service.t) -> s.state)
+      List.nth_opt on_iface 0
 
 let get_iface_info services annotations iface =
   let%lwt stats = get_stats iface in
@@ -178,10 +180,22 @@ let get_iface_info services annotations iface =
     match List.assoc_opt iface annotations with Some a -> a | None -> []
   in
   let ping_rate = get_ping_rate iface in
-  let state = get_iface_state services iface in
+  let service = find_iface_service services iface in
+  let state = Option.map (fun (s : Connman.Service.t) -> s.state) service in
+  let error = Option.bind service (fun (s : Connman.Service.t) -> s.error) in
+  let strength =
+    Option.bind service (fun (s : Connman.Service.t) -> s.strength)
+  in
   Lwt.return
     ( iface
-    , { status; state; stats; annotations = iface_annotations; ping_rate }
+    , { status
+      ; state
+      ; error
+      ; strength
+      ; stats
+      ; annotations = iface_annotations
+      ; ping_rate
+      }
     )
 
 let getInfo connman annotations =
