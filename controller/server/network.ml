@@ -92,12 +92,12 @@ module Interface = struct
     let%lwt status = process#status in
     match status with
     | Unix.WEXITED 0 ->
-      json
-      |> Ezjsonm.from_string
-      |> Ezjsonm.value
-      |> Ezjsonm.get_list of_json
-      |> List.filter_map (fun x -> x)
-      |> return
+        json
+        |> Ezjsonm.from_string
+        |> Ezjsonm.value
+        |> Ezjsonm.get_list of_json
+        |> List.filter_map (fun x -> x)
+        |> return
     | _ ->
-      Lwt.fail_with "Failed to run 'ip -j link' command"
+        Lwt.fail_with "Failed to run 'ip -j link' command"
 end
