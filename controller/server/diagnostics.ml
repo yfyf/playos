@@ -16,6 +16,7 @@ type network_stats =
 
 type interface_info =
   { status : string
+  ; state : Connman.Service.state option
   ; stats : network_stats
   ; annotations : string list
   ; ping_rate : float option
@@ -158,21 +159,41 @@ let get_status iface =
   in
   if state = "" then Lwt.return "unknown" else Lwt.return state
 
-let get_iface_info annotations iface =
+let get_iface_state services iface =
+  let on_iface =
+    List.filter
+      (fun (s : Connman.Service.t) -> s.ethernet.interface = iface)
+      services
+  in
+  match List.find_opt Connman.Service.is_connected on_iface with
+  | Some s ->
+      Some s.state
+  | None ->
+      List.nth_opt on_iface 0 |> Option.map (fun (s : Connman.Service.t) -> s.state)
+
+let get_iface_info services annotations iface =
   let%lwt stats = get_stats iface in
   let%lwt status = get_status iface in
   let iface_annotations =
     match List.assoc_opt iface annotations with Some a -> a | None -> []
   in
   let ping_rate = get_ping_rate iface in
+  let state = get_iface_state services iface in
   Lwt.return
-    (iface, { status; stats; annotations = iface_annotations; ping_rate })
+    ( iface
+    , { status; state; stats; annotations = iface_annotations; ping_rate }
+    )
 
-let getInfo annotations =
+let getInfo connman annotations =
+  let%lwt services = Connman.Manager.get_services connman in
   let%lwt wifi_ifaces = get_ifaces "w" in
   let%lwt eth_ifaces = get_ifaces "e" in
-  let%lwt wifi = Lwt_list.map_s (get_iface_info annotations) wifi_ifaces in
-  let%lwt ethernet = Lwt_list.map_s (get_iface_info annotations) eth_ifaces in
+  let%lwt wifi =
+    Lwt_list.map_s (get_iface_info services annotations) wifi_ifaces
+  in
+  let%lwt ethernet =
+    Lwt_list.map_s (get_iface_info services annotations) eth_ifaces
+  in
   let%lwt driver =
     run_cmd "systemctl show -p ActiveState --value dividat-driver"
   in
@@ -219,13 +240,13 @@ let respond_ok () =
 
 (* --- App Builder --- *)
 
-let build ~get_interface_annotations app =
+let build ~connman ~get_interface_annotations app =
   app
   (* Attach our new global middleware *)
   |> middleware cors_middleware
   |> get "/diagnostics" (fun _ ->
          let%lwt interface_annotations = get_interface_annotations () in
-         let%lwt server_info = getInfo interface_annotations in
+         let%lwt server_info = getInfo connman interface_annotations in
          Lwt.return (resp_json (diagnostics_res_to_jsonm server_info))
      )
   |> post "/diagnostics/wifi/on" (fun _ ->
