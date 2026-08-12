@@ -97,12 +97,11 @@ module Interface = struct
 
   (** Returns true if the interface name matches common Wifi schemes
       (e.g. wlan0, wlp2s0, wlx...) *)
-  let is_wifi t =
-    String.starts_with ~prefix:"wl" t.name
+  let is_wifi t = String.starts_with ~prefix:"wl" t.name
 
   (** Returns true if the interface name matches common Ethernet schemes
       (e.g. eth0, eno1, enp3s0...) *)
   let is_ethernet t =
-    String.starts_with ~prefix:"eth" t.name ||
-    String.starts_with ~prefix:"en" t.name
+    String.starts_with ~prefix:"eth" t.name
+    || String.starts_with ~prefix:"en" t.name
 end

@@ -57,20 +57,21 @@ type params =
 
 (* Helper to filter, enumerate, and format MAC addresses *)
 let render_macs label_prefix predicate interfaces =
-    let items = List.filter predicate interfaces in
-    let count = List.length items in
-    List.mapi (fun index (i : Network.Interface.t) ->
+  let items = List.filter predicate interfaces in
+  let count = List.length items in
+  List.mapi
+    (fun index (i : Network.Interface.t) ->
       let label =
         if count > 1 then Printf.sprintf "%s MAC %d" label_prefix (index + 1)
         else label_prefix ^ " MAC"
       in
       span
-        ~a:[ a_class [ "d-Title__Meta" ]
-           ]
+        ~a:[ a_class [ "d-Title__Meta" ] ]
         [ txt (Printf.sprintf "%s: " label)
         ; span ~a:[ a_style "text-transform: uppercase" ] [ txt i.address ]
         ]
-    ) items
+    )
+    items
 
 let html { proxy; services; interfaces; interface_annotations } =
   let connected_services, available_services =
@@ -85,18 +86,23 @@ let html { proxy; services; interfaces; interface_annotations } =
       (Page.header_title ~icon:Icon.world
          ~right_action:
            (a ~a:[ a_href "/network"; a_class [ "d-Button" ] ] [ txt "Refresh" ])
-      [span ([ txt "Network" ]
-           @ 
-           (if mac_addresses = [] then [] 
-            else 
-              [ br ()
-              ; small
-                  ~a:[ a_style "font-size: 0.6rem; color: #666; font-weight: normal; display: block; line-height:1; display: flex; flex-direction: row; gap: 0.75rem;" ]
-                  mac_addresses
-              ]
-           )
-         )
-      ]
+         [ span
+             ([ txt "Network" ]
+             @
+             if mac_addresses = [] then []
+             else
+               [ br ()
+               ; small
+                   ~a:
+                     [ a_style
+                         "font-size: 0.6rem; color: #666; font-weight: normal; \
+                          display: block; line-height:1; display: flex; \
+                          flex-direction: row; gap: 0.75rem;"
+                     ]
+                   mac_addresses
+               ]
+             )
+         ]
       )
     (div
        [ ( if List.length connected_services = 0 then txt ""
@@ -145,8 +151,13 @@ let html { proxy; services; interfaces; interface_annotations } =
        ; section
            [ h2 ~a:[ a_class [ "d-Title" ] ] [ txt "Network Interfaces" ]
            ; div
-               ~a:[ a_class [ "d-Preformatted" ]; a_style "display:flex;flex-direction: column;" ]
-               (render_macs "Ethernet" Network.Interface.is_ethernet interfaces @ render_macs "Wi-Fi" Network.Interface.is_wifi interfaces )
+               ~a:
+                 [ a_class [ "d-Preformatted" ]
+                 ; a_style "display:flex;flex-direction: column;"
+                 ]
+               (render_macs "Ethernet" Network.Interface.is_ethernet interfaces
+               @ render_macs "Wi-Fi" Network.Interface.is_wifi interfaces
+               )
            ]
        ]
     )
