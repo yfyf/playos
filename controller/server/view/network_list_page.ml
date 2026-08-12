@@ -1,6 +1,5 @@
 open Connman.Service
 open Tyxml.Html
-open Sexplib.Std
 open Protocol_conv_jsonm
 
 let service_item interface_annotations ({ id; name; strength; ipv4 } as service)
