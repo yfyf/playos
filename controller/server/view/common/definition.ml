@@ -11,6 +11,6 @@ let term ?a =
   dt ~a:([ a_class [ "d-Definitions__Term" ] ] @ Option.value ~default:[] a)
 
 let description ?a =
-  dt
+  dd
     ~a:
       ([ a_class [ "d-Definitions__Description" ] ] @ Option.value ~default:[] a)
