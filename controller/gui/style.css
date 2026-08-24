@@ -413,6 +413,13 @@ html {
 
 /* Definitions */
 
+.d-Definitions--Horizontal {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: auto auto;
+  gap: 0rem 2rem;
+}
+
 .d-Definitions__Term {
     text-decoration: underline;
     margin-bottom: var(--spacing-mouse);
