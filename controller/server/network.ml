@@ -47,12 +47,21 @@ let init ~connman =
       in
       Lwt_result.fail exn
 
+(** A partial classification of interfaces *)
+type interface_kind =
+  | Loopback
+  | Ethernet
+  | Wireless
+  | Other
+[@@deriving sexp]
+
 module Interface = struct
   type t =
     { index : int
     ; name : string
     ; address : string
     ; link_type : string
+    ; link_status : string
     }
   [@@deriving sexp, protocol ~driver:(module Jsonm)]
 
@@ -63,6 +72,7 @@ module Interface = struct
         ; ("name", i.name |> string)
         ; ("address", i.address |> string)
         ; ("link_type", i.link_type |> string)
+        ; ("link_status", i.link_status |> string)
         ]
       |> value
     )
@@ -75,6 +85,7 @@ module Interface = struct
         ; name = dict |> List.assoc "ifname" |> Ezjsonm.get_string
         ; address = dict |> List.assoc "address" |> Ezjsonm.get_string
         ; link_type = dict |> List.assoc "link_type" |> Ezjsonm.get_string
+        ; link_status = dict |> List.assoc "operstate" |> Ezjsonm.get_string
         }
     with _ -> None
 
@@ -95,13 +106,13 @@ module Interface = struct
     |> List.filter_map (fun x -> x)
     |> return
 
-  (** Returns true if the interface name matches common Wifi schemes
-      (e.g. wlan0, wlp2s0, wlx...) *)
-  let is_wifi t = String.starts_with ~prefix:"wl" t.name
+  let prefix_to_kind = [ ("eth", Ethernet); ("en", Ethernet); ("wl", Wireless) ]
 
-  (** Returns true if the interface name matches common Ethernet schemes
-      (e.g. eth0, eno1, enp3s0...) *)
-  let is_ethernet t =
-    String.starts_with ~prefix:"eth" t.name
-    || String.starts_with ~prefix:"en" t.name
+  let kind t =
+    if t.link_type = "loopback" then Loopback
+    else
+      prefix_to_kind
+      |> List.find_opt (fun (prefix, _) -> String.starts_with ~prefix t.name)
+      |> Option.map snd
+      |> Option.value ~default:Other
 end
