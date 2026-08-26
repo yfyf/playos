@@ -3,9 +3,6 @@ open Tyxml.Html
 open Protocol_conv_jsonm
 
 (* generic utils *)
-let intersperse c lst =
-  lst |> List.mapi (fun i e -> if i > 0 then [ c; e ] else [ e ]) |> List.concat
-
 let sort_by_fun f = List.sort (fun a b -> compare (f a) (f b))
 
 let option_filter f opt = Option.bind opt (fun v -> if f v then Some v else None)
@@ -111,9 +108,7 @@ let interface_item { display_name; interface; annotations; service } =
     |> Option.map service_ip_addresses
     |> option_filter (fun s -> not (List.is_empty s))
     |> Option.value ~default:[ "N/A" ]
-    |> List.map txt
-    |> intersperse (br ())
-    |> span
+    |> List.map (fun v -> div [ txt v ])
   in
   let classes = [ "d-InterfaceList__Item" ] in
   let maybe_wrap_in_link body =
@@ -144,7 +139,7 @@ let interface_item { display_name; interface; annotations; service } =
         ; span
             ~a:[ a_class [ "d-InterfaceList__Address" ] ]
             [ txt interface.address ]
-        ; div ~a:[ a_class [ "d-InterfaceList__Address" ] ] [ ip_addresses ]
+        ; div ~a:[ a_class [ "d-InterfaceList__Address" ] ] ip_addresses
         ; span
             ~a:[ a_class [ "d-InterfaceList__Chevron" ] ]
             (if is_connected then [ txt "ᐳ" ] else [])
