@@ -3,7 +3,9 @@
 LLM-generated script for mocking connman in controller testing, presented as is.
 
 Currently supports easily producing different types of net.`connman.GetServices()`
-outputs. To modify the output, change the script and restart.
+outputs. To modify the output, change the script and restart. In particular, you
+probably want to match the ETH_INTERFACE_* and WIFI_INTERFACE names to your
+hardware.
 
 You either need to run this with `sudo` (if your system already has connman
 installed) or ensure you have an appropriate D-BUS policy for your user:
@@ -33,6 +35,12 @@ import dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
 import sys
+
+# Interface names for associating the services with, ensure they match
+# your `ip link` output if you want an interface to appear "connected"
+ETH_INTERFACE_1 = "enp0s31f6"
+ETH_INTERFACE_2 = "enp0s31f7"
+WIFI_INTERFACE = "wlp0s20f3"
 
 # ---------------------------------------------------------
 # Mock for net.connman.Technology
@@ -93,21 +101,14 @@ class MockConnmanManager(dbus.service.Object):
                 dbus.Dictionary({
                     'Type': dbus.String('ethernet'),
                     'Name': dbus.String('Wired'),
-                    'State': dbus.String('idle'),
+                    'State': dbus.String('ready'),
                     'Favorite': dbus.Boolean(True),
                     'AutoConnect': dbus.Boolean(True),
                     'IPv4': dbus.Dictionary({'Address': '192.168.1.10',
                                              'Netmask': '255.255.255.0', 'Method': 'dhcp'}, signature='sv'),
-
-                    'IPv6': dbus.Dictionary({
-                        'Address': dbus.String('2a00:1eb8:c24f:d71e:2f1:c724:dcfa:d84f'),
-                        'PrefixLength': dbus.Byte(1),
-                        'Method': dbus.String('dhcp'),
-                        'Privacy': dbus.String('foo')
-                    }, signature='sv'),
                     'Security': dbus.Array(['none'], signature='s'),
                     'Nameservers.Configuration': dbus.Array(['8.8.8.8', '1.1.1.1'], signature='s'),
-                    'Ethernet': mock_ethernet_dict('enp0s31f6', 'AA:BB:CC:DD:EE:01')
+                    'Ethernet': mock_ethernet_dict(ETH_INTERFACE_1, 'AA:BB:CC:DD:EE:01')
                 }, signature='sv')
             ),
             # 2. WiFi AP (Ready / Connected)
@@ -131,7 +132,7 @@ class MockConnmanManager(dbus.service.Object):
                         'Privacy': dbus.String('foo')
                     }, signature='sv'),
                     'Nameservers.Configuration': dbus.Array(['8.8.8.8'], signature='s'),
-                    'Ethernet': mock_ethernet_dict('wlp0s20f3', 'AA:BB:CC:DD:EE:02')
+                    'Ethernet': mock_ethernet_dict(WIFI_INTERFACE, 'AA:BB:CC:DD:EE:02')
                 }, signature='sv')
             ),
             (
@@ -145,7 +146,7 @@ class MockConnmanManager(dbus.service.Object):
                     'AutoConnect': dbus.Boolean(True),
                     'Security': dbus.Array(['psk'], signature='s'),
                     'Nameservers.Configuration': dbus.Array(['8.8.8.8'], signature='s'),
-                    'Ethernet': mock_ethernet_dict('wlp0s20f3', 'AA:BB:CC:DD:EE:02')
+                    'Ethernet': mock_ethernet_dict(WIFI_INTERFACE, 'AA:BB:CC:DD:EE:02')
                 }, signature='sv')
             ),
             (
@@ -159,7 +160,7 @@ class MockConnmanManager(dbus.service.Object):
                     'AutoConnect': dbus.Boolean(True),
                     'Security': dbus.Array(['psk'], signature='s'),
                     'Nameservers.Configuration': dbus.Array(['8.8.8.8'], signature='s'),
-                    'Ethernet': mock_ethernet_dict('wlp0s20f3', 'AA:BB:CC:DD:EE:02')
+                    'Ethernet': mock_ethernet_dict(WIFI_INTERFACE, 'AA:BB:CC:DD:EE:02')
                 }, signature='sv')
             ),
             (
@@ -173,7 +174,7 @@ class MockConnmanManager(dbus.service.Object):
                     'AutoConnect': dbus.Boolean(True),
                     'Security': dbus.Array(['psk'], signature='s'),
                     'Nameservers.Configuration': dbus.Array(['8.8.8.8'], signature='s'),
-                    'Ethernet': mock_ethernet_dict('wlp0s20f3', 'AA:BB:CC:DD:EE:02')
+                    'Ethernet': mock_ethernet_dict(WIFI_INTERFACE, 'AA:BB:CC:DD:EE:02')
                 }, signature='sv')
             ),
         ]
