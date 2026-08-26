@@ -174,7 +174,7 @@ html {
 .d-InterfaceList, .d-WifiList {
   list-style: none;
   padding: 0;
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-horse);
 }
 
 .d-InterfaceList > li, .d-WifiList > li {
