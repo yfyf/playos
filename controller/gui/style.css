@@ -228,17 +228,12 @@ html {
 }
 
 .d-InterfaceList__Labels {
-  margin-left: var(--spacing-cat);
   display: inline-flex;
   gap: var(--spacing-mouse);
 }
 
-.d-InterfaceList__Label {
-  color: var(--color-hint);
-  border: 2px solid var(--color-hint);
-  border-radius: var(--box-radius);
-  padding: var(--spacing-cat);
-  font-size: small;
+.d-InterfaceList__Label:not(:last-child)::after {
+  content: "; ";
 }
 
 .d-InterfaceList__Address {
