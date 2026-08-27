@@ -237,7 +237,8 @@ html {
 }
 
 .d-InterfaceList__Address {
-  font-size: small;
+  font-size: var(--font-size-cat);
+  font-family: monospace;
   line-height: 1.4;
 }
 
