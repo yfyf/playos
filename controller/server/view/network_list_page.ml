@@ -138,7 +138,7 @@ let interface_item { display_name; interface; annotations; service } =
             ]
         ; span
             ~a:[ a_class [ "d-InterfaceList__Address" ] ]
-            [ txt interface.address ]
+            [ txt (String.uppercase_ascii interface.address) ]
         ; div ~a:[ a_class [ "d-InterfaceList__Address" ] ] ip_addresses
         ; span
             ~a:[ a_class [ "d-InterfaceList__Chevron" ] ]
