@@ -237,7 +237,6 @@ html {
 }
 
 .d-InterfaceList__Address {
-  color: var(--color-hint);
   font-size: small;
   line-height: 1.4;
 }
