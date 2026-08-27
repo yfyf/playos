@@ -9,10 +9,10 @@ let option_filter f opt = Option.bind opt (fun v -> if f v then Some v else None
 
 (* page-specific utils *)
 
-let icon_from_interface_kind ~strength kind =
+let icon_from_interface_kind ?strength kind =
   match kind with
   | Network.Wireless ->
-      Icon.wifi ~strength:(Option.value ~default:0 strength) ()
+      Icon.wifi ?strength ()
   | Network.Ethernet ->
       Icon.ethernet
   | _ ->
@@ -20,7 +20,7 @@ let icon_from_interface_kind ~strength kind =
 
 let icon_from_interface_and_service interface service =
   let strength = Option.bind service (fun s -> s.strength) in
-  icon_from_interface_kind ~strength (Network.Interface.kind interface)
+  icon_from_interface_kind ?strength (Network.Interface.kind interface)
 
 let service_ip_addresses service =
   let ipv4 = service.ipv4 |> Option.map (fun (a : IPv4.t) -> a.address) in
@@ -147,7 +147,7 @@ let interface_item { display_name; interface; annotations; service } =
     ]
 
 let wifi_item ({ id; name; strength } as service) =
-  let icon = icon_from_interface_kind ~strength Network.Wireless in
+  let icon = icon_from_interface_kind ?strength Network.Wireless in
   let is_connected = Connman.Service.is_connected service in
   li
     [ a
