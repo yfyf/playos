@@ -200,7 +200,7 @@ html {
 }
 
 .d-InterfaceList__Item {
-  grid-template-columns: 20px 40px 150px auto 200px 300px 20px;
+  grid-template-columns: 20px 40px 100px auto 150px 280px 20px;
 }
 
 .d-WifiList__Item {
