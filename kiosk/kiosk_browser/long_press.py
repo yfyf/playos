@@ -1,10 +1,12 @@
 from PyQt6 import QtCore
+from PyQt6.QtGui import QKeySequence
 from PyQt6.QtCore import Qt, QEvent
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication, QPlainTextEdit
 import time
 
 from typing import List, NamedTuple
 from functools import reduce
+from datetime import datetime
 
 from kiosk_browser.focus_object_tracker import FocusObjectTracker
 
@@ -114,8 +116,14 @@ class LongPressEvents(QtCore.QObject):
         return supress_if_repeated or supress_explicit
 
     def eventFilter(self, source, event):
+        app = QApplication.instance()
+        console = [ c for c in [w.findChild(QPlainTextEdit, "GlobalDebugConsole") for w in app.topLevelWidgets()] if c][0]
+        timestamp = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+
         if event.type() == QtCore.QEvent.Type.KeyPress:
             key = event.key()
+            key_name = QKeySequence(key).toString()
+            console.appendPlainText(f"{timestamp} keypress for {key_name=}, {event.isAutoRepeat()=}")
             if key in self._tracked_keys:
                 if not event.isAutoRepeat():
                     # first key press
@@ -144,6 +152,8 @@ class LongPressEvents(QtCore.QObject):
 
         elif event.type() == QtCore.QEvent.Type.KeyRelease:
             key = event.key()
+            key_name = QKeySequence(key).toString()
+            console.appendPlainText(f"{timestamp} keyrelease for {key_name=}, {event.isAutoRepeat()=}")
 
             should_supress = self._key_event_should_be_supressed(event)
 

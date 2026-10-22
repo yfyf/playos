@@ -12,7 +12,7 @@ in
 , deployUrl ? "s3://dist-test.dividat.ch/releases/playos/test/"
 
   # url where kiosk points
-, kioskUrl ? "https://play.dividat.com"
+, kioskUrl ? "https://w3c.github.io/uievents/tools/key-event-viewer.html"
 , watchdogUrls ? [ "https://play.dividat.com" ]
 
 , versionOverride ? null

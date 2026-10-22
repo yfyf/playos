@@ -1,5 +1,5 @@
 from PyQt6 import QtWidgets, QtCore, QtGui
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication, QPlainTextEdit
 from PyQt6.QtCore import Qt
 import time
 import logging
@@ -88,6 +88,11 @@ class MainWidget(QtWidgets.QWidget):
         self._layout.addWidget(self._captive_portal_message)
         self._layout.addWidget(self._dialogable_browser)
         self.setLayout(self._layout)
+
+        self.debug_console = QPlainTextEdit()
+        self.debug_console.setObjectName("GlobalDebugConsole")
+        self.debug_console.setReadOnly(True) # Prevent user typing
+        self._layout.addWidget(self.debug_console)
 
         # Application shortcuts
 
