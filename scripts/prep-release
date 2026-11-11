@@ -49,7 +49,9 @@ exit_with_err() {
 
 # ----------- Ask to cofirm vars ---------
 
-RELEASE_BRANCH=${RELEASE_BRANCH:-"release/${RELEASE_VERSION%.*}.x"}
+if [[ -z "${RELEASE_BRANCH:-}" && "$RELEASE_VERSION" =~ ^v?([0-9]+)\.([0-9]+) ]]; then
+  RELEASE_BRANCH="release/${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.x"
+fi
 
 PREVIOUS_VERSION=${PREVIOUS_VERSION:-$(get_playos_nix_version)}
 
